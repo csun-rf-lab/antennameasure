@@ -1,49 +1,58 @@
-classdef MI4190
+classdef MI4190 < MotionController.IMotionController
     %MI4190 Class for controlling MI-4190 motion controller.
     %   This class must be provided a serialport object in the constructor,
     %   and can be used to control any number of axes on the controller.
-    
+
     % TODO: Look at using a mutex to lock the serial port between
     % write/read.
-    
+
     % TODO: Should prologix gpib device be initialized here or before
     % serial port is passed to us?
-    
+
     properties
+        % axes, in superclass
         Ser   % serialport
         state % State
     end
-    
+
     methods
-        function obj = MI4190(sp)
+        function obj = MI4190(sp, axes)
             %MI4190 Construct an instance of this class
-            %   You must provide a serialport object.
+            %   sp is a serialport object, supporting GPIB communications.
+            %   axes is a vector of all axes identifiers.
+
+            assert(isa(sp, 'serialport'), 'sp must be a serialport.');
+            assert(isvector(axes), 'axes must be a vector.');
+
             obj.Ser = sp;
+            obj.axes = axes;
         end
-        
-        function obj = moveAxisToPos(obj, axis, position)
-            %moveAxisToPos Move a specific axis to a specific position.
+
+        function obj = moveTo(obj, axis, position)
+            %moveTo Move a specific axis to a specific position.
             %   Axis is numerical, and position is... probably in degrees.
             % TODO: CHECK UNITS FOR POSITION.
             
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            % TODO: position validation
+
             obj.state = MotionControllerState.Moving;
             fprintf(obj.Ser, 'CONT1:AXIS(%d):POS:COMM %f\n', axis, position);
             fprintf(obj.Ser, 'CONT1:AXIS(%d):MOT:STAR', axis);
             waitPosition(axis, position);
             obj.state = MotionControllerState.Stopped;
         end
-        
-        function waitPosition(axis, position)
-            % TODO: Do we need both this and waitIdle()?
-        end
-        
-        function waitIdle(axis)
+
+        function stop(obj, axis)
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
             % TODO
         end
 
         function pos = getPosition(obj, axis)
             %getPosition Returns the current position of an axis as a
             %double.
+
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
             fprintf(obj.Ser, 'CONT1:AXIS(%d):POS:CURR?', axis);
             posChar = char(fread(obj.Ser, 100))';
@@ -52,9 +61,22 @@ classdef MI4190
             pos = str2double(convertCharsToStrings(posChar));
         end
 
+        function waitPosition(obj, axis, position)
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            % TODO: Do we need both this and waitIdle()?
+            % TODO: include a timeout?
+        end
+
+        function waitIdle(obj, axis)
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            % TODO
+        end
+
         function vel = getVelocity(obj, axis)
             %getVelocity returns the current velocity of an axis as a
             %double.
+
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
             fprintf(obj.Ser, 'CONT1:AXIS(%d):VEL:CURR?', axis);
             velChar = char(fread(obj.Ser, 100))';
@@ -62,7 +84,7 @@ classdef MI4190
             %velChar = fread(obj.Ser, 100, '*char')';
             vel = str2double(convertCharsToStrings(velChar));
         end
-        
+
         function status = getStatus(obj, axis)
             %getStatus Gets and returns the current status values of Axis.
             %   Axis status is returned as an integer representing a 16-bit number,
@@ -70,6 +92,8 @@ classdef MI4190
             %   This function gets that value, and decodes each bit, returning a list
             %   of the different status values of the axis at a moment in time.
             %   Details on page 3-42 of MI-4192 Manual.
+
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
             fprintf(MI4190, 'CONT1:AXIS(%d):STAT?', axis);
             currStat = char(fread(obj.Ser, 100))';
@@ -120,7 +144,7 @@ classdef MI4190
 
                 idx = idx - 1;
             end % end for
-            
+
             status = currStat;
         end % end getStatus()
     end % end methods
