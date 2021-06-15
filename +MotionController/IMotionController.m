@@ -24,7 +24,7 @@ classdef IMotionController
         getVelocity(obj, axis)
         % Return the current velocity of an axis as a double.
     end
-    
+
     methods
         function stopAll(obj)
             %stopAll stops motion on all axes, one at a time.

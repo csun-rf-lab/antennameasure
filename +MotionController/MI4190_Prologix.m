@@ -6,8 +6,8 @@ classdef MI4190_Prologix < MotionController.MI4190
 
     methods
         function obj = MI4190_Prologix(comport, addr, axes)
-            assert(isstring(comport), "comport must be a string.");
-            assert(isinteger(addr), "addr must be an integer (GPIB address).");
+            assert(isstring(comport) || (ischar(comport) && length(comport) > 1), "comport must be a string.");
+            addr = uint8(addr); % GPIB address is an integer
 
             % per Prologix manual, baudrate can be set to anything.
             baudrate = 9600;
