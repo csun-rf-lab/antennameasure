@@ -39,11 +39,6 @@ classdef MI4190_Prologix < MotionController.MI4190
 % TODO: "++eoi 1" was commented out in Austin's code... but VNA code had
 % "++eoi 0"...
 
-            % Verify connection
-            fprintf(MI4190, '*idn?');
-            idn = char(fread(MI4190, 100))';
-            fprintf('Position Controller ID: %s\n', idn);
-
 % TODO: how to detect that something went wrong?
 
             obj = obj@MotionController.MI4190(sp, axes); % call superclass constructor

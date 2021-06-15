@@ -9,6 +9,10 @@ classdef MI4190 < MotionController.IMotionController
     % TODO: Look at using a mutex to lock the serial port between
     % write/read.
 
+    % TODO: Support moving multiple axes at once. Right now this will only
+    % handle moving one axis at a time, which could be incredibly tedious
+    % when switching between steps of a job.
+
     properties
         % axes, in superclass
         Ser   % serialport
@@ -27,6 +31,12 @@ classdef MI4190 < MotionController.IMotionController
             obj.Ser = sp;
             obj.axes = axes;
 
+            % Verify connection
+            fprintf(obj.Ser, '*CLS'); % clear output/error queues
+            fprintf(obj.Ser, '*IDN?');
+            idn = char(fread(obj.Ser, 100))';
+            fprintf('Position Controller ID: %s\n', idn);
+
 % Alternative approach to dealing with axes:
 %             % count available axes
 %             fprintf(obj.Ser, 'CONT1:AXIS:COUN');
@@ -37,15 +47,71 @@ classdef MI4190 < MotionController.IMotionController
 % ^^^ This may need a regex, like used in getStatus().
         end
 
+        function ct = getErrorCount(obj)
+            %getErrorCount Return the number of errors in the queue.
+
+            fprintf(obj.Ser, 'SYST:ERR:COUN');
+            c = char(fread(obj.Ser, 4))';
+            ct = uint8(str2double(c));
+        end
+
+        function errs = getErrors(obj)
+            %getErrors Return all errors in the queue.
+
+            fprintf(obj.Ser, 'SYST:ERR:ALL?');
+            errs = char(fread(obj.Ser, 1024))';
+        end
+
+        function clearErrors(obj)
+            %clearErrors Clear all errors in the queue.
+            %   See also getErrorCount() and getErrors().
+
+            fprintf(obj.Ser, '*CLS');
+        end
+
         function name = getName(obj, axis)
-            %getName gets the name of a specific axis.
+            %getName Get the name of a specific axis.
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
-            fprintf(MI4190, 'CONT1:AXIS(%d):NAME?', axis);
+            fprintf(obj.Ser, 'CONT1:AXIS(%d):NAME?', axis);
             name = char(fread(obj.Ser, 100))';
             % TODO: MATLAB suggests this instead (I think):
             %name = fread(obj.Ser, 100, '*char')';
+        end
+
+        function units = getPosUnits(obj, axis)
+            %getPosUnits Get the position units for a specific axis.
+            %   See MI4190PosUnits enum.
+
+            fprintf(obj.Ser, 'CONT1:AXIS(%d):UNIT:POS?', axis);
+            c = char(fread(obj.Ser, 1))';
+            % TODO: MATLAB suggests this instead (I think):
+            %c = fread(obj.Ser, 4, '*char')';
+            unitsNum = unit8(str2double(c));
+
+            switch unitsNum
+                case 0
+                    units = MotionController.MI4190PosUnits.Encoder;
+                case 1
+                    units = MotionController.MI4190PosUnits.Meter;
+                case 2
+                    units = MotionController.MI4190PosUnits.Centimeter;
+                case 3
+                    units = MotionController.MI4190PosUnits.Millimeter;
+                case 4
+                    units = MotionController.MI4190PosUnits.Inch;
+                case 5
+                    units = MotionController.MI4190PosUnits.Foot;
+                case 6
+                    units = MotionController.MI4190PosUnits.Degree;
+                case 7
+                    units = MotionController.MI4190PosUnits.Radian;
+                case 8
+                    units = MotionController.MI4190PosUnits.Revolution;
+                otherwise
+                    error('Unexpected position units response from controller');
+            end
         end
 
         function obj = moveTo(obj, axis, position)
@@ -56,20 +122,23 @@ classdef MI4190 < MotionController.IMotionController
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
             % TODO: position validation
 
-            obj.state = MotionControllerState.Moving;
+            obj.state = MotionController.MotionControllerState.Moving;
             fprintf(obj.Ser, 'CONT1:AXIS(%d):POS:COMM %f\n', axis, position);
             fprintf(obj.Ser, 'CONT1:AXIS(%d):MOT:STAR', axis);
             waitPosition(axis, position);
-            obj.state = MotionControllerState.Stopped;
+            obj.state = MotionController.MotionControllerState.Stopped;
         end
 
         function stop(obj, axis)
+            %stop Stop motion on a specific axis.
+
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
-            % TODO
+
+            fprintf(obj.Ser, 'CONT1:AXIS(%d):MOT:STOP', axis);
         end
 
         function pos = getPosition(obj, axis)
-            %getPosition Returns the current position of an axis as a
+            %getPosition Return the current position of an axis as a
             %double.
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
@@ -83,17 +152,32 @@ classdef MI4190 < MotionController.IMotionController
 
         function waitPosition(obj, axis, position)
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
-            % TODO: Do we need both this and waitIdle()?
+
+% TODO *******************************************************
+% The code I found on github is a bit of a mess. Might need to
+% actually play with the controller to see how to write this best.
+% TODO *******************************************************
             % TODO: include a timeout?
         end
 
         function waitIdle(obj, axis)
+            %waitIdle Query the controller for the axis velocity, and don't
+            %return until the velocity is zero.
+
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
-            % TODO
+
+            vel = obj.getVelocity(axis);
+            while (vel ~= 0.0000)
+                pause(1.5); % don't over-burden the controller
+                vel = obj.getVelocity(axis);
+            end
+
+            % TODO: Add user-controllable timeout property. (prop on obj?)
+            % If the timeout is exceeded, throw an error.
         end
 
         function vel = getVelocity(obj, axis)
-            %getVelocity returns the current velocity of an axis as a
+            %getVelocity Return the current velocity of an axis as a
             %double.
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
@@ -106,7 +190,7 @@ classdef MI4190 < MotionController.IMotionController
         end
 
         function status = getStatus(obj, axis)
-            %getStatus Gets and returns the current status values of Axis.
+            %getStatus Get and return the current status values of Axis.
             %   Axis status is returned as an integer representing a 16-bit number,
             %   where each bit has a respective meaning for the axis status options.
             %   This function gets that value, and decodes each bit, returning a list
@@ -115,7 +199,7 @@ classdef MI4190 < MotionController.IMotionController
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
-            fprintf(MI4190, 'CONT1:AXIS(%d):STAT?', axis);
+            fprintf(obj.Ser, 'CONT1:AXIS(%d):STAT?', axis);
             currStat = char(fread(obj.Ser, 100))';
             % TODO: MATLAB suggests this instead (I think):
             %currStat = fread(obj.Ser, 100, '*char')';
@@ -158,8 +242,8 @@ classdef MI4190 < MotionController.IMotionController
         end % end getStatus()
 
         function stopAll(obj)
-            %stopAll stops motion on all axes, all at once.
-            fprintf(obj.Ser, 'CONT1:ABORT', axis);
+            %stopAll Stop motion on all axes, all at once.
+            fprintf(obj.Ser, 'CONT1:ABORT');
         end
     end % end methods
 end
