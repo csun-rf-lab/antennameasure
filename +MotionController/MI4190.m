@@ -2,12 +2,12 @@ classdef MI4190 < MotionController.IMotionController
     %MI4190 Class for controlling MI-4190 motion controller.
     %   This class must be provided a serialport object in the constructor,
     %   and can be used to control any number of axes on the controller.
+    %
+    %   Right now this class assumes it is only talking to one controller,
+    %   with id 1.
 
     % TODO: Look at using a mutex to lock the serial port between
     % write/read.
-
-    % TODO: Should prologix gpib device be initialized here or before
-    % serial port is passed to us?
 
     properties
         % axes, in superclass
@@ -21,11 +21,31 @@ classdef MI4190 < MotionController.IMotionController
             %   sp is a serialport object, supporting GPIB communications.
             %   axes is a vector of all axes identifiers.
 
-            assert(isa(sp, 'serialport'), 'sp must be a serialport.');
-            assert(isvector(axes), 'axes must be a vector.');
+             assert(isa(sp, 'serialport'), 'sp must be a serialport.');
+             assert(isvector(axes), 'axes must be a vector.');
 
             obj.Ser = sp;
             obj.axes = axes;
+
+% Alternative approach to dealing with axes:
+%             % count available axes
+%             fprintf(obj.Ser, 'CONT1:AXIS:COUN');
+%             c = char(fread(obj.Ser, 4))';
+%             % TODO: MATLAB suggests this instead (I think):
+%             %c = fread(obj.Ser, 4, '*char')';
+%             obj.axes = unit8(str2double(c));
+% ^^^ This may need a regex, like used in getStatus().
+        end
+
+        function name = getName(obj, axis)
+            %getName gets the name of a specific axis.
+
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+
+            fprintf(MI4190, 'CONT1:AXIS(%d):NAME?', axis);
+            name = char(fread(obj.Ser, 100))';
+            % TODO: MATLAB suggests this instead (I think):
+            %name = fread(obj.Ser, 100, '*char')';
         end
 
         function obj = moveTo(obj, axis, position)
@@ -100,52 +120,46 @@ classdef MI4190 < MotionController.IMotionController
             % TODO: MATLAB suggests this instead (I think):
             %currStat = fread(obj.Ser, 100, '*char')';
 
-            decStat = str2double(regexp(currStat,'\d*','match'));
+            intStat = uint16(str2double(regexp(currStat,'\d*','match')));
 
-            % TODO: Figure out whether this code is correct. This is just
-            % copied from Austin's code.
+            % Lookup table from the manual (page 3-42).
+            % Note that here the "bit number" starts from 1 (because
+            % MATLAB...) whereas in the manual (and normal rational human
+            % thought) the bits start from #0. The comments indicate the
+            % bit numbers per the manual.
+            statuses = {
+                'latch is set',            % 0
+                'home switch active',      % 1
+                'reverse limit active',    % 2
+                'forward limit active',    % 3
+                'PAU fault',               % 4
+                'axis enabled',            % 5
+                'error limit active',      % 6
+                'axis in motion',          % 7
+                'axis is active',          % 8
+                'axis is indexed',         % 9
+                'position trigger active', % 10
+                'property changed',        % 11
+                'status changed',          % 12
+                'unknown',                 % 13: unused
+                'unknown',                 % 14: unused
+                'unknown'                  % 15: unused
+            };
 
-            binStat = dec2bin(decStat) - '0';
-            binStat = [zeros(1,12 - length(binStat) + 1) binStat];
-            idx = 12; % bits 13, 14, and 15 of status are unused.
-            for i = binStat
-                if (i == 1)
-                    switch idx
-                        case 12
-                            currStat = [currStat 'Status Changed., '];
-                        case 11
-                            currStat = [currStat 'Property Changed, '];
-                        case 10
-                            currStat = [currStat 'Position Trigger Active'];
-                        case 9
-                            currStat = [currStat 'Axis is Indexed, '];
-                        case 8
-                            currStat = [currStat 'Axis is Active, '];
-                        case 7
-                            currStat = [currStat 'Axis in Motion, '];
-                        case 6
-                            currStat = [currStat 'Error Limit Active, '];
-                        case 5
-                            currStat = [currStat 'Axis Enabled, '];
-                        case 4
-                            currStat = [currStat 'PAU Fault, '];
-                        case 3
-                            currStat = [currStat 'Forward Limit Active, '];
-                        case 2
-                            currStat = [currStat 'Reverse Limit Active, '];
-                        case 1
-                            currStat = [currStat 'Home Switch Active, '];
-                        case 0
-                            currStat = [currStat 'Latch is Set, '];
-                        otherwise
-                            currStat = [currStat 'Error in status decoding!'];    
+            status = '';
+            for b = 1:length(statuses)
+                if bitget(intStat, b) == 1
+                    if length(status) ~= 0
+                        status = strcat(status, ", ");
                     end
-                end % end if
-
-                idx = idx - 1;
-            end % end for
-
-            status = currStat;
+                    status = strcat(status, statuses(b));
+                end
+            end
         end % end getStatus()
+
+        function stopAll(obj)
+            %stopAll stops motion on all axes, all at once.
+            fprintf(obj.Ser, 'CONT1:ABORT', axis);
+        end
     end % end methods
 end
