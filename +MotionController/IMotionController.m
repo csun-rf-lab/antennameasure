@@ -3,11 +3,15 @@ classdef IMotionController
 
     properties (SetAccess = protected, GetAccess = protected)
         axes % vector of all axis identifiers
+        log  % Logger object
     end
 
     methods (Abstract)
         moveTo(obj, axis, position)
         % Move a specific axis to a specific position.
+
+        moveIncremental(obj, axis, increment)
+        % Move a specific amount from current position.
 
         stop(obj, axis)
         % Stop all motion on specific axis.

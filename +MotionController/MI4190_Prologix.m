@@ -4,8 +4,13 @@ classdef MI4190_Prologix < MotionController.MI4190
     %   This class wraps the MI4190 driver and initalizes the Prologix
     %   device.
 
+    properties (SetAccess = protected, GetAccess = protected)
+        % other props from parent class
+        addr % GPIB address
+    end
+
     methods
-        function obj = MI4190_Prologix(comport, addr, axes)
+        function obj = MI4190_Prologix(comport, addr, axes, logger)
             assert(isstring(comport) || (ischar(comport) && length(comport) > 1), "comport must be a string.");
             addr = uint8(addr); % GPIB address is an integer
 
@@ -33,7 +38,7 @@ classdef MI4190_Prologix < MotionController.MI4190
             % Configure as Controller (++mode 1), instrument address #,
             % and with read-after-write (++auto 1) enabled
             fprintf(sp, '++mode 1');
-            fprintf(sp, '++addr %d', addr);
+            obj.setGPIBAddress(addr);
             fprintf(sp, '++auto 1');
             fprintf(sp, '++eoi 0');
 % TODO: "++eoi 1" was commented out in Austin's code... but VNA code had
@@ -41,7 +46,17 @@ classdef MI4190_Prologix < MotionController.MI4190
 
 % TODO: how to detect that something went wrong?
 
-            obj = obj@MotionController.MI4190(sp, axes); % call superclass constructor
+            obj = obj@MotionController.MI4190(sp, axes, logger); % call superclass constructor
+        end
+
+        function obj = setGPIBAddress(obj, addr)
+            obj.addr = addr;
+            fprintf(sp, '++addr %d', addr);
+            obj.logger.Info(sprintf("Changed target GPIB address to %d", addr));
+        end
+
+        function addr = getGPIBAddress(obj)
+            addr = obj.addr;
         end
     end
 end

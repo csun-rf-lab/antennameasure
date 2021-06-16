@@ -15,12 +15,13 @@ classdef MI4190 < MotionController.IMotionController
 
     properties
         % axes, in superclass
+        % log,  in superclass
         Ser   % serialport
         state % State
     end
 
     methods
-        function obj = MI4190(sp, axes)
+        function obj = MI4190(sp, axes, logger)
             %MI4190 Construct an instance of this class
             %   sp is a serialport object, supporting GPIB communications.
             %   axes is a vector of all axes identifiers.
@@ -30,12 +31,13 @@ classdef MI4190 < MotionController.IMotionController
 
             obj.Ser = sp;
             obj.axes = axes;
+            obj.log = logger;
 
             % Verify connection
             fprintf(obj.Ser, '*CLS'); % clear output/error queues
             fprintf(obj.Ser, '*IDN?');
             idn = char(fread(obj.Ser, 100))';
-            fprintf('Position Controller ID: %s\n', idn);
+            obj.log.Info(sprintf('Position Controller ID: %s\n', idn));
 
 % Alternative approach to dealing with axes:
 %             % count available axes
@@ -125,8 +127,12 @@ classdef MI4190 < MotionController.IMotionController
             obj.state = MotionController.MotionControllerState.Moving;
             fprintf(obj.Ser, 'CONT1:AXIS(%d):POS:COMM %f\n', axis, position);
             fprintf(obj.Ser, 'CONT1:AXIS(%d):MOT:STAR', axis);
-            waitPosition(axis, position);
+            obj.waitPosition(axis, position);
             obj.state = MotionController.MotionControllerState.Stopped;
+        end
+
+        function obj = moveIncremental(obj, axis, increment)
+            % TODO
         end
 
         function stop(obj, axis)
