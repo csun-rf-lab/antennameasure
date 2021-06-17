@@ -5,9 +5,11 @@ classdef IMotionController< handle
     % at this point...
 
     properties (SetAccess = protected, GetAccess = protected)
+        connected = false % bool: connected to controller?
         axes % vector of all axis identifiers
         cb   % callback function handle
         log  % Logger object
+        onConnectStateChangeCb
     end
 
     methods (Abstract)
@@ -34,6 +36,10 @@ classdef IMotionController< handle
     end
 
     methods
+        function conn = isConnected(obj)
+            conn = obj.connected;
+        end
+
         function stopAll(obj)
             %stopAll stops motion on all axes, one at a time.
             %   If specific motion controller supports it, this method
@@ -49,6 +55,14 @@ classdef IMotionController< handle
 
         function clearOnStateChangeCallback(obj)
             clear obj.cb;
+        end
+
+        function setOnConnectStateChangeCallback(obj, cb)
+            obj.onConnectStateChangeCb = cb;
+        end
+
+        function clearOnConnectStateChangeCallback(obj)
+            clear obj.onConnectStateChangeCb;
         end
     end
 
@@ -66,6 +80,13 @@ classdef IMotionController< handle
 
             if isa(obj.cb, 'function_handle')
                 obj.cb(state);
+            end
+        end
+
+        function setConnectedState(obj, state)
+            obj.connected = state;
+            if isa(obj.onConnectStateChangeCb, 'function_handle')
+                obj.onConnectStateChangeCb(obj.connected);
             end
         end
     end

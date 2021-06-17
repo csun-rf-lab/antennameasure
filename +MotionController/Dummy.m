@@ -9,6 +9,7 @@ classdef Dummy < MotionController.IMotionController
         state % State
         positions
         addr
+        comport
     end
 
     methods
@@ -132,6 +133,28 @@ classdef Dummy < MotionController.IMotionController
         %
         % methods from prologix extension class
         %
+
+        function connect(obj)
+            if obj.addr == 1
+                obj.setConnectedState(true);
+            else
+                obj.setConnectedState(false);
+            end
+        end
+
+        function disconnect(obj)
+            obj.setConnectedState(false);
+        end
+
+        function setSerialPort(obj, comport)
+            obj.comport = comport;
+            obj.log.Info(sprintf("Changed target serial port to %s", obj.comport));
+            obj.disconnect();
+        end
+
+        function comport = getSerialPort(obj)
+            comport = obj.comport;
+        end
 
         function setGPIBAddress(obj, addr)
             obj.addr = uint8(addr);

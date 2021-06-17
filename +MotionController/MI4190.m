@@ -16,28 +16,18 @@ classdef MI4190 < MotionController.IMotionController
     properties
         % axes, in superclass
         % log,  in superclass
-        Ser   % serialport
         state % State
     end
 
     methods
-        function obj = MI4190(sp, axes, logger)
+        function obj = MI4190(axes, logger)
             %MI4190 Construct an instance of this class
-            %   sp is a serialport object, supporting GPIB communications.
             %   axes is a vector of all axes identifiers.
 
-             assert(isa(sp, 'serialport'), 'sp must be a serialport.');
              assert(isvector(axes), 'axes must be a vector.');
 
-            obj.Ser = sp;
             obj.axes = axes;
             obj.log = logger;
-
-            % Verify connection
-            fprintf(obj.Ser, '*CLS'); % clear output/error queues
-            fprintf(obj.Ser, '*IDN?');
-            idn = char(fread(obj.Ser, 100))';
-            obj.log.Info(sprintf('Position Controller ID: %s\n', idn));
 
 % Alternative approach to dealing with axes:
 %             % count available axes
@@ -52,23 +42,38 @@ classdef MI4190 < MotionController.IMotionController
         function ct = getErrorCount(obj)
             %getErrorCount Return the number of errors in the queue.
 
-            fprintf(obj.Ser, 'SYST:ERR:COUN');
-            c = char(fread(obj.Ser, 4))';
-            ct = uint8(str2double(c));
+            try
+                obj.send('SYST:ERR:COUN');
+                c = obj.recv(4);
+                ct = uint8(str2double(c));
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
 
         function errs = getErrors(obj)
             %getErrors Return all errors in the queue.
 
-            fprintf(obj.Ser, 'SYST:ERR:ALL?');
-            errs = char(fread(obj.Ser, 1024))';
+            try
+                send('SYST:ERR:ALL?');
+                errs = obj.recv(1024);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
 
         function clearErrors(obj)
             %clearErrors Clear all errors in the queue.
             %   See also getErrorCount() and getErrors().
 
-            fprintf(obj.Ser, '*CLS');
+            try
+                obj.send('*CLS');
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
 
         function name = getName(obj, axis)
@@ -76,43 +81,55 @@ classdef MI4190 < MotionController.IMotionController
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
-            fprintf(obj.Ser, 'CONT1:AXIS(%d):NAME?', axis);
-            name = char(fread(obj.Ser, 100))';
-            % TODO: MATLAB suggests this instead (I think):
-            %name = fread(obj.Ser, 100, '*char')';
+            if obj.connected
+                try
+                    obj.send(sprintf('CONT1:AXIS(%d):NAME?', axis));
+                    name = obj.recv(100);
+                catch e
+                    disp(e);
+                    obj.log.Error(e.message);
+                    name = "Unknown";
+                end
+            else
+                name = "Unknown";
+            end
         end
 
         function units = getPosUnits(obj, axis)
             %getPosUnits Get the position units for a specific axis.
             %   See MI4190PosUnits enum.
 
-            fprintf(obj.Ser, 'CONT1:AXIS(%d):UNIT:POS?', axis);
-            c = char(fread(obj.Ser, 1))';
-            % TODO: MATLAB suggests this instead (I think):
-            %c = fread(obj.Ser, 4, '*char')';
-            unitsNum = unit8(str2double(c));
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):UNIT:POS?', axis));
+                c = obj.recv(1);
+                unitsNum = unit8(str2double(c));
 
-            switch unitsNum
-                case 0
-                    units = MotionController.MI4190PosUnits.Encoder;
-                case 1
-                    units = MotionController.MI4190PosUnits.Meter;
-                case 2
-                    units = MotionController.MI4190PosUnits.Centimeter;
-                case 3
-                    units = MotionController.MI4190PosUnits.Millimeter;
-                case 4
-                    units = MotionController.MI4190PosUnits.Inch;
-                case 5
-                    units = MotionController.MI4190PosUnits.Foot;
-                case 6
-                    units = MotionController.MI4190PosUnits.Degree;
-                case 7
-                    units = MotionController.MI4190PosUnits.Radian;
-                case 8
-                    units = MotionController.MI4190PosUnits.Revolution;
-                otherwise
-                    error('Unexpected position units response from controller');
+                switch unitsNum
+                    case 0
+                        units = MotionController.MI4190PosUnits.Encoder;
+                    case 1
+                        units = MotionController.MI4190PosUnits.Meter;
+                    case 2
+                        units = MotionController.MI4190PosUnits.Centimeter;
+                    case 3
+                        units = MotionController.MI4190PosUnits.Millimeter;
+                    case 4
+                        units = MotionController.MI4190PosUnits.Inch;
+                    case 5
+                        units = MotionController.MI4190PosUnits.Foot;
+                    case 6
+                        units = MotionController.MI4190PosUnits.Degree;
+                    case 7
+                        units = MotionController.MI4190PosUnits.Radian;
+                    case 8
+                        units = MotionController.MI4190PosUnits.Revolution;
+                    otherwise
+                        error('Unexpected position units response from controller');
+                end
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+                units = -1; % TODO: better error result
             end
         end
 
@@ -124,11 +141,16 @@ classdef MI4190 < MotionController.IMotionController
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
             % TODO: position validation
 
-            obj.state = MotionController.MotionControllerStateEnum.Moving;
-            fprintf(obj.Ser, 'CONT1:AXIS(%d):POS:COMM %f\n', axis, position);
-            fprintf(obj.Ser, 'CONT1:AXIS(%d):MOT:STAR', axis);
-            obj.waitPosition(axis, position);
-            obj.state = MotionController.MotionControllerStateEnum.Stopped;
+            try
+                obj.state = MotionController.MotionControllerStateEnum.Moving;
+                obj.send(sprintf('CONT1:AXIS(%d):POS:COMM %f\n', axis, position));
+                obj.send(sprintf('CONT1:AXIS(%d):MOT:STAR', axis));
+                obj.waitPosition(axis, position);
+                obj.state = MotionController.MotionControllerStateEnum.Stopped;
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
 
         function moveIncremental(obj, axis, increment)
@@ -140,7 +162,12 @@ classdef MI4190 < MotionController.IMotionController
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
-            fprintf(obj.Ser, 'CONT1:AXIS(%d):MOT:STOP', axis);
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):MOT:STOP', axis));
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
 
         function pos = getPosition(obj, axis)
@@ -149,11 +176,15 @@ classdef MI4190 < MotionController.IMotionController
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
-            fprintf(obj.Ser, 'CONT1:AXIS(%d):POS:CURR?', axis);
-            posChar = char(fread(obj.Ser, 100))';
-            % TODO: MATLAB suggests this instead (I think):
-            %posChar = fread(obj.Ser, 100, '*char')';
-            pos = str2double(convertCharsToStrings(posChar));
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):POS:CURR?', axis));
+                posChar = obj.recv(100);
+                pos = str2double(convertCharsToStrings(posChar));
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+                pos = -99999999999;
+            end
         end
 
         function waitPosition(obj, axis, position)
@@ -188,11 +219,14 @@ classdef MI4190 < MotionController.IMotionController
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
-            fprintf(obj.Ser, 'CONT1:AXIS(%d):VEL:CURR?', axis);
-            velChar = char(fread(obj.Ser, 100))';
-            % TODO: MATLAB suggests this instead (I think):
-            %velChar = fread(obj.Ser, 100, '*char')';
-            vel = str2double(convertCharsToStrings(velChar));
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):VEL:CURR?', axis));
+                velChar = obj.recv(100);
+                vel = str2double(convertCharsToStrings(velChar));
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
 
         function status = getStatus(obj, axis)
@@ -204,13 +238,6 @@ classdef MI4190 < MotionController.IMotionController
             %   Details on page 3-42 of MI-4192 Manual.
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
-
-            fprintf(obj.Ser, 'CONT1:AXIS(%d):STAT?', axis);
-            currStat = char(fread(obj.Ser, 100))';
-            % TODO: MATLAB suggests this instead (I think):
-            %currStat = fread(obj.Ser, 100, '*char')';
-
-            intStat = uint16(str2double(regexp(currStat,'\d*','match')));
 
             % Lookup table from the manual (page 3-42).
             % Note that here the "bit number" starts from 1 (because
@@ -236,20 +263,36 @@ classdef MI4190 < MotionController.IMotionController
                 'unknown'                  % 15: unused
             };
 
-            status = '';
-            for b = 1:length(statuses)
-                if bitget(intStat, b) == 1
-                    if length(status) ~= 0
-                        status = strcat(status, ", ");
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):STAT?', axis));
+                currStat = obj.recv(100);
+
+                intStat = uint16(str2double(regexp(currStat,'\d*','match')));
+
+                status = '';
+                for b = 1:length(statuses)
+                    if bitget(intStat, b) == 1
+                        if length(status) ~= 0
+                            status = strcat(status, ", ");
+                        end
+                        status = strcat(status, statuses(b));
                     end
-                    status = strcat(status, statuses(b));
                 end
+            catch e
+                disp(e);
+                obj.log.error(e.message);
             end
         end % end getStatus()
 
         function stopAll(obj)
             %stopAll Stop motion on all axes, all at once.
-            fprintf(obj.Ser, 'CONT1:ABORT');
+
+            try
+                obj.send('CONT1:ABORT');
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
     end % end methods
 end
