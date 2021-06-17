@@ -1,8 +1,12 @@
-classdef IMotionController
+classdef IMotionController< handle
     %IMOTIONCONTROLLER Interface class
+
+    % TODO: Rename this. It probably should be AbstractMotionController
+    % at this point...
 
     properties (SetAccess = protected, GetAccess = protected)
         axes % vector of all axis identifiers
+        cb   % callback function handle
         log  % Logger object
     end
 
@@ -36,6 +40,32 @@ classdef IMotionController
             %   can be overridden to stop all axes at once.
             for x = 1:length(obj.axes)
                 obj.stop(obj.axes(x))
+            end
+        end
+
+        function setOnStateChangeCallback(obj, cb)
+            obj.cb = cb;
+        end
+
+        function clearOnStateChangeCallback(obj)
+            clear obj.cb;
+        end
+    end
+
+    methods (Access = protected)
+        function onStateChange(obj, axis, moving, fault, position)
+            % onStateChange called by extending class when a state change
+            % occurs. This method collects the relevant information and
+            % calls the state change callback.
+
+            state = MotionController.AxisState();
+            state.axis = axis;
+            state.moving = moving;
+            state.fault = fault;
+            state.position = position;
+
+            if isa(obj.cb, 'function_handle')
+                obj.cb(state);
             end
         end
     end

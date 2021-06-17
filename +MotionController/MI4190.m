@@ -116,7 +116,7 @@ classdef MI4190 < MotionController.IMotionController
             end
         end
 
-        function obj = moveTo(obj, axis, position)
+        function moveTo(obj, axis, position)
             %moveTo Move a specific axis to a specific position.
             %   Axis is numerical, and position is... probably in degrees.
             % TODO: CHECK UNITS FOR POSITION.
@@ -131,7 +131,7 @@ classdef MI4190 < MotionController.IMotionController
             obj.state = MotionController.MotionControllerStateEnum.Stopped;
         end
 
-        function obj = moveIncremental(obj, axis, increment)
+        function moveIncremental(obj, axis, increment)
             % TODO
         end
 

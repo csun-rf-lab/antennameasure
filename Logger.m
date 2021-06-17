@@ -42,7 +42,7 @@ classdef Logger < handle % By extending "handle" we get normal class behavior
         end
 
         function ClearCallback(obj)
-            delete obj.cb;
+            delete(obj.cb);
         end
     end
 

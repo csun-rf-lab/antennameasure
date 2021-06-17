@@ -55,18 +55,22 @@ classdef Dummy < MotionController.IMotionController
             units = MotionController.MI4190PosUnits.Degree;
         end
 
-        function obj = moveTo(obj, axis, position)
+        function moveTo(obj, axis, position)
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
             obj.log.Debug(sprintf("Dummy::moveTo(%d, %f): MOVING", axis, position));
             obj.state = MotionController.MotionControllerStateEnum.Moving;
-            obj.positions(axis) = position;
+            start = obj.positions(axis);
+
+            obj.positions(axis) = position - start/2;
+            obj.onStateChange(axis, true, false, obj.positions(axis));
             obj.waitPosition(axis, position);
+
             obj.state = MotionController.MotionControllerStateEnum.Stopped;
             obj.log.Debug(sprintf("Dummy::moveTo(%d, %f): STOPPED", axis, position));
         end
 
-        function obj = moveIncremental(obj, axis, increment)
+        function moveIncremental(obj, axis, increment)
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
             obj.log.Debug(sprintf("Dummy::moveIncremental(%d, %f): MOVING", axis, increment));
@@ -93,6 +97,11 @@ classdef Dummy < MotionController.IMotionController
 
             obj.log.Debug(sprintf("Dummy::waitPosition(%d, %f)", axis, position));
             pause(2);
+
+            % set the final position now. we already went halfway there in
+            % moveTo().
+            obj.positions(axis) = position;
+            obj.onStateChange(axis, false, false, obj.positions(axis));
         end
 
         function waitIdle(obj, axis)
@@ -124,7 +133,7 @@ classdef Dummy < MotionController.IMotionController
         % methods from prologix extension class
         %
 
-        function obj = setGPIBAddress(obj, addr)
+        function setGPIBAddress(obj, addr)
             obj.addr = uint8(addr);
             obj.log.Info(sprintf("Changed target GPIB address to %d", obj.addr));
         end

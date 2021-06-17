@@ -49,7 +49,7 @@ classdef MI4190_Prologix < MotionController.MI4190
             obj = obj@MotionController.MI4190(sp, axes, logger); % call superclass constructor
         end
 
-        function obj = setGPIBAddress(obj, addr)
+        function setGPIBAddress(obj, addr)
             obj.addr = addr;
             fprintf(sp, '++addr %d', addr);
             obj.logger.Info(sprintf("Changed target GPIB address to %d", addr));
