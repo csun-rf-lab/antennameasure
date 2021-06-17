@@ -1,4 +1,4 @@
-classdef MotionControllerState
+classdef MotionControllerStateEnum
     enumeration
         Stopped, Moving, Fault
     end

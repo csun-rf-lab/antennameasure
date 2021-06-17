@@ -124,11 +124,11 @@ classdef MI4190 < MotionController.IMotionController
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
             % TODO: position validation
 
-            obj.state = MotionController.MotionControllerState.Moving;
+            obj.state = MotionController.MotionControllerStateEnum.Moving;
             fprintf(obj.Ser, 'CONT1:AXIS(%d):POS:COMM %f\n', axis, position);
             fprintf(obj.Ser, 'CONT1:AXIS(%d):MOT:STAR', axis);
             obj.waitPosition(axis, position);
-            obj.state = MotionController.MotionControllerState.Stopped;
+            obj.state = MotionController.MotionControllerStateEnum.Stopped;
         end
 
         function obj = moveIncremental(obj, axis, increment)

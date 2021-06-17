@@ -59,10 +59,10 @@ classdef Dummy < MotionController.IMotionController
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
             obj.log.Debug(sprintf("Dummy::moveTo(%d, %f): MOVING", axis, position));
-            obj.state = MotionController.MotionControllerState.Moving;
+            obj.state = MotionController.MotionControllerStateEnum.Moving;
             obj.positions(axis) = position;
             obj.waitPosition(axis, position);
-            obj.state = MotionController.MotionControllerState.Stopped;
+            obj.state = MotionController.MotionControllerStateEnum.Stopped;
             obj.log.Debug(sprintf("Dummy::moveTo(%d, %f): STOPPED", axis, position));
         end
 
@@ -70,10 +70,10 @@ classdef Dummy < MotionController.IMotionController
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
             obj.log.Debug(sprintf("Dummy::moveIncremental(%d, %f): MOVING", axis, increment));
-            obj.state = MotionController.MotionControllerState.Moving;
+            obj.state = MotionController.MotionControllerStateEnum.Moving;
             obj.positions(axis) = obj.positions(axis) + increment;
             obj.waitIdle(axis);
-            obj.state = MotionController.MotionControllerState.Stopped;
+            obj.state = MotionController.MotionControllerStateEnum.Stopped;
             obj.log.Debug(sprintf("Dummy::moveIncremental(%d, %f): STOPPED", axis, increment));
         end
 
