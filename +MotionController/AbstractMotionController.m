@@ -1,8 +1,5 @@
-classdef IMotionController< handle
-    %IMOTIONCONTROLLER Interface class
-
-    % TODO: Rename this. It probably should be AbstractMotionController
-    % at this point...
+classdef AbstractMotionController< handle
+    %ABSTRACTMOTIONCONTROLLER Base class
 
     properties (SetAccess = protected, GetAccess = protected)
         connected = false % bool: connected to controller?

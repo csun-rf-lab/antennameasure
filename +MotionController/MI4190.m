@@ -1,4 +1,4 @@
-classdef MI4190 < MotionController.IMotionController
+classdef MI4190 < MotionController.AbstractMotionController
     %MI4190 Class for controlling MI-4190 motion controller.
     %   This class must be provided a serialport object in the constructor,
     %   and can be used to control any number of axes on the controller.
@@ -104,6 +104,7 @@ classdef MI4190 < MotionController.IMotionController
                 c = obj.recv(1);
                 unitsNum = unit8(str2double(c));
 
+                units = MotionController.MI4190PosUnits.Unknown;
                 switch unitsNum
                     case 0
                         units = MotionController.MI4190PosUnits.Encoder;
@@ -124,19 +125,62 @@ classdef MI4190 < MotionController.IMotionController
                     case 8
                         units = MotionController.MI4190PosUnits.Revolution;
                     otherwise
-                        error('Unexpected position units response from controller');
+                        error('Unexpected position units response from controller: ' + unitsNum);
                 end
             catch e
                 disp(e);
                 obj.log.Error(e.message);
-                units = -1; % TODO: better error result
+            end
+        end
+
+        function enabled = isForwardSoftLimitEnabled(obj, axis)
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:FEN?', axis));
+                enabled = obj.recv(100); % TODO: How short should this be?
+                % TODO: Convert to bool
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function enabled = isReverseSoftLimitEnabled(obj, axis)
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:REN?', axis));
+                enabled = obj.recv(100); % TODO: How short should this be?
+                % TODO: Convert to bool
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function lim = getForwardSoftLimit(obj, axis)
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:FORW?', axis));
+                lim = obj.recv(100); % TODO: How short should this be?
+                % TODO: Convert to double
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function lim = getReverseSoftLimit(obj, axis)
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:REV?', axis));
+                lim = obj.recv(100); % TODO: How short should this be?
+                % TODO: Convert to double
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
             end
         end
 
         function moveTo(obj, axis, position)
             %moveTo Move a specific axis to a specific position.
-            %   Axis is numerical, and position is... probably in degrees.
-            % TODO: CHECK UNITS FOR POSITION.
+            %   Axis is numerical, and position is in whatever units
+            %   getPosUnits() says the units should be.
             
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
             % TODO: position validation
@@ -154,7 +198,18 @@ classdef MI4190 < MotionController.IMotionController
         end
 
         function moveIncremental(obj, axis, increment)
-            % TODO
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+
+            try
+                obj.state = MotionController.MotionControllerStateEnum.Moving;
+                obj.send(sprintf('CONT1:AXIS(%d):POS:INCR %f\n', axis, increment));
+                obj.send(sprintf('CONT1:AXIS(%d):MOT:STAR', axis));
+                obj.waitIdle(axis);
+                obj.state = MotionController.MotionControllerStateEnum.Stopped;
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
 
         function stop(obj, axis)

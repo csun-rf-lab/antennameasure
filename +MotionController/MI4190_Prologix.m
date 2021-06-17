@@ -25,6 +25,8 @@ classdef MI4190_Prologix < MotionController.MI4190
         end
 
         function connect(obj)
+            obj.log.Info(sprintf('connect() %s GPIB#%d\n', obj.comport, obj.addr));
+
             % per Prologix manual, baudrate can be set to anything.
             baudrate = 9600;
 
@@ -46,17 +48,17 @@ classdef MI4190_Prologix < MotionController.MI4190
 
                 % Configure as Controller (++mode 1), instrument address #,
                 % and with read-after-write (++auto 1) enabled
-                fprintf(sp, '++mode 1');
-                fprintf(sp, '++addr %d', addr);
-                fprintf(sp, '++auto 1');
-                fprintf(sp, '++eoi 0');
+                fprintf(obj.sp, '++mode 1');
+                fprintf(obj.sp, '++addr %d', obj.addr);
+                fprintf(obj.sp, '++auto 1');
+                fprintf(obj.sp, '++eoi 0');
 % TODO: "++eoi 1" was commented out in Austin's code... but VNA code had
 % "++eoi 0"...
 
                 % Verify connection
                 fprintf(obj.sp, '*CLS'); % clear output/error queues
                 fprintf(obj.sp, '*IDN?');
-                idn = char(fread(obj.sp, 100))';
+                idn = obj.recv(100);
                 obj.log.Info(sprintf('Position Controller ID: %s\n', idn));
 
 % TODO: how to detect that something went wrong?
@@ -98,6 +100,7 @@ classdef MI4190_Prologix < MotionController.MI4190
 
         % TODO: This should probably be protected
         function send(obj, msg)
+            obj.log.Debug(sprintf("send(): %s", msg));
             fprintf(obj.sp, msg);
         end
 
@@ -106,6 +109,7 @@ classdef MI4190_Prologix < MotionController.MI4190
             msg = char(fread(obj.sp, len))';
 %            % TODO: MATLAB suggests this instead (I think):
 %            %msg = fread(obj.sp, len, '*char')';
+            obj.log.Debug(sprintf("recv(): %s", msg));
         end
     end
 end

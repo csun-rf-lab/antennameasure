@@ -1,4 +1,4 @@
-classdef Dummy < MotionController.IMotionController
+classdef Dummy < MotionController.AbstractMotionController
     %DUMMY Test class for motion controller interfaces.
     %   See MI4190 class for more detail about how these classes should
     %   work in general.
