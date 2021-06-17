@@ -48,7 +48,13 @@ classdef Logger < handle % By extending "handle" we get normal class behavior
 
     methods (Access = private)
         function append(obj, msg)
-            obj.log_data = strcat(obj.log_data, msg, '\n');
+            % MATLAB is truly insane. strcat() strips newlines... but you
+            % can get around that by putting the newline inside a cell?!?
+            % Also, it works fine without the cell if you're just dumping
+            % text to the console, but not when you're going to show the
+            % result in a textarea.
+            % https://www.mathworks.com/matlabcentral/answers/93333-why-does-the-strcat-command-remove-the-trailing-spaces-while-performing-a-concatenation-in-matlab-7
+            obj.log_data = strcat(obj.log_data, msg, {newline});
 
             if isa(obj.cb, 'function_handle')
                 obj.cb(msg, obj.log_data);

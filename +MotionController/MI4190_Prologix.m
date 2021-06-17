@@ -68,8 +68,10 @@ classdef MI4190_Prologix < MotionController.MI4190
         end
 
         function disconnect(obj)
-            fclose(obj.sp);
-            obj.setConnectedState(false);
+            if obj.connected
+                fclose(obj.sp);
+                obj.setConnectedState(false);
+            end
         end
 
         function setSerialPort(obj, comport)
