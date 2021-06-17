@@ -56,8 +56,9 @@ classdef MI4190 < MotionController.AbstractMotionController
             %getErrors Return all errors in the queue.
 
             try
-                send('SYST:ERR:ALL?');
+                obj.send('SYST:ERR:ALL?');
                 errs = obj.recv(1024);
+                obj.log.Info(sprintf("Errors: %s", errs));
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -207,6 +208,7 @@ classdef MI4190 < MotionController.AbstractMotionController
                 obj.waitIdle(axis);
                 obj.state = MotionController.MotionControllerStateEnum.Stopped;
             catch e
+% TODO: Check if axis is moving. May need to update state to Stopped.
                 disp(e);
                 obj.log.Error(e.message);
             end
@@ -257,12 +259,18 @@ classdef MI4190 < MotionController.AbstractMotionController
             %return until the velocity is zero.
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
-
+% TODO: Maybe get status instead, and wait until axis not in motion?
+% This would make it easier to watch for limits/faults/etc.
             vel = obj.getVelocity(axis);
             while (vel ~= 0.0000)
+                pos = obj.getPosition();
+                obj.onStateChange(axis, true, false, pos);
                 pause(1.5); % don't over-burden the controller
                 vel = obj.getVelocity(axis);
             end
+
+            pos = obj.getPosition();
+            obj.onStateChange(axis, false, false, pos);
 
             % TODO: Add user-controllable timeout property. (prop on obj?)
             % If the timeout is exceeded, throw an error.
@@ -333,6 +341,8 @@ classdef MI4190 < MotionController.AbstractMotionController
                         status = strcat(status, statuses(b));
                     end
                 end
+
+                obj.log.Info(sprintf('Status: %s', status));
             catch e
                 disp(e);
                 obj.log.error(e.message);
