@@ -26,38 +26,49 @@ classdef MI4190_Prologix < MotionController.MI4190
 
         function connect(obj)
             obj.log.Info(sprintf('connect() %s GPIB#%d\n', obj.comport, obj.addr));
+if ~isempty(instrfind)
+    fclose(instrfind)
+    delete(instrfind)
+end
 
             % per Prologix manual, baudrate can be set to anything.
             baudrate = 9600;
 
             try
-                sp = serialport(obj.comport, baudrate);
+                %sp = serialport(obj.comport, baudrate, "Timeout", "0.5");
+                sp = serial(obj.comport);
 
+%TODO: Update this comment. It seems wrong now, after 2021-06-17 in the
+%lab.
                 % Prologix Controller 4.2 requires CR as command terminator, LF is
                 % optional. The controller terminates internal query responses with CR and
                 % LF. Responses from the instrument are passed through as is. (See Prologix
                 % Controller Manual)
-                sp.Terminator = 'CR/LF';
+                %sp.configureTerminator('LF');
+                sp.Terminator = 'LF';
 
                 % Reduce the timeout from the default 10 seconds to speed things up
                 sp.Timeout = 0.5;
 
+                fclose(sp);
                 fopen(sp);
                 obj.sp = sp;
                 obj.setConnectedState(true);
 
+                pause(1);
+
                 % Configure as Controller (++mode 1), instrument address #,
-                % and with read-after-write (++auto 1) enabled
+                % and with read-after-write (++auto 1) enabled.
+                % eoi and eos set line endings properly.
                 fprintf(obj.sp, '++mode 1');
-                fprintf(obj.sp, '++addr %d', obj.addr);
+                fprintf(obj.sp, sprintf('++addr %d', obj.addr));
                 fprintf(obj.sp, '++auto 1');
-                fprintf(obj.sp, '++eoi 0');
-% TODO: "++eoi 1" was commented out in Austin's code... but VNA code had
-% "++eoi 0"...
+                fprintf(obj.sp, '++eoi 1');
+                fprintf(obj.sp, '++eos 2'); % works with 2 or 3
 
                 % Verify connection
-                fprintf(obj.sp, '*CLS'); % clear output/error queues
-                fprintf(obj.sp, '*IDN?');
+                %fprintf(obj.sp, '*CLS'); % clear output/error queues
+                fprintf(obj.sp, '*idn?');
                 idn = obj.recv(100);
                 obj.log.Info(sprintf('Position Controller ID: %s\n', idn));
 
@@ -102,6 +113,7 @@ classdef MI4190_Prologix < MotionController.MI4190
         function send(obj, msg)
             obj.log.Debug(sprintf("send(): %s", msg));
             fprintf(obj.sp, msg);
+            % with serialport() this would be writeline()
         end
 
         % TODO: This too
@@ -109,6 +121,14 @@ classdef MI4190_Prologix < MotionController.MI4190
             msg = char(fread(obj.sp, len))';
 %            % TODO: MATLAB suggests this instead (I think):
 %            %msg = fread(obj.sp, len, '*char')';
+            % Better yet: use readline() with the newer serialport() model.
+
+            % messages seem to have trailing newlines
+            msg = strtrim(msg);
+            % May need to do something like this:
+            % strtrim(sprintf('0   \n'))
+            % because matlab is picky.
+
             obj.log.Debug(sprintf("recv(): %s", msg));
         end
     end

@@ -28,15 +28,6 @@ classdef MI4190 < MotionController.AbstractMotionController
 
             obj.axes = axes;
             obj.log = logger;
-
-% Alternative approach to dealing with axes:
-%             % count available axes
-%             fprintf(obj.Ser, 'CONT1:AXIS:COUN');
-%             c = char(fread(obj.Ser, 4))';
-%             % TODO: MATLAB suggests this instead (I think):
-%             %c = fread(obj.Ser, 4, '*char')';
-%             obj.axes = unit8(str2double(c));
-% ^^^ This may need a regex, like used in getStatus().
         end
 
         function ct = getErrorCount(obj)
@@ -54,10 +45,10 @@ classdef MI4190 < MotionController.AbstractMotionController
 
         function errs = getErrors(obj)
             %getErrors Return all errors in the queue.
-
+% 0, "No error"
             try
                 obj.send('SYST:ERR:ALL?');
-                errs = obj.recv(1024);
+                errs = obj.recv(100);
                 obj.log.Info(sprintf("Errors: %s", errs));
             catch e
                 disp(e);
@@ -85,7 +76,7 @@ classdef MI4190 < MotionController.AbstractMotionController
             if obj.connected
                 try
                     obj.send(sprintf('CONT1:AXIS(%d):NAME?', axis));
-                    name = obj.recv(100);
+                    name = obj.recv(32);
                 catch e
                     disp(e);
                     obj.log.Error(e.message);
@@ -102,8 +93,8 @@ classdef MI4190 < MotionController.AbstractMotionController
 
             try
                 obj.send(sprintf('CONT1:AXIS(%d):UNIT:POS?', axis));
-                c = obj.recv(1);
-                unitsNum = unit8(str2double(c));
+                c = obj.recv(4);
+                unitsNum = uint8(str2double(c));
 
                 units = MotionController.MI4190PosUnits.Unknown;
                 switch unitsNum
@@ -137,8 +128,17 @@ classdef MI4190 < MotionController.AbstractMotionController
         function enabled = isForwardSoftLimitEnabled(obj, axis)
             try
                 obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:FEN?', axis));
-                enabled = obj.recv(100); % TODO: How short should this be?
-                % TODO: Convert to bool
+                enabledStr = obj.recv(8);
+
+                enabled = false;
+                switch str2double(enabledStr)
+                    case 0
+                        enabled = false;
+                    case 1
+                        enabled = true;
+                    otherwise
+                        error('Unexpected soft limit enabled response from controller: ' + enabledStr);
+                end
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -148,8 +148,17 @@ classdef MI4190 < MotionController.AbstractMotionController
         function enabled = isReverseSoftLimitEnabled(obj, axis)
             try
                 obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:REN?', axis));
-                enabled = obj.recv(100); % TODO: How short should this be?
-                % TODO: Convert to bool
+                enabledStr = obj.recv(8);
+
+                enabled = false;
+                switch str2double(enabledStr)
+                    case 0
+                        enabled = false;
+                    case 1
+                        enabled = true;
+                    otherwise
+                        error('Unexpected soft limit enabled response from controller: ' + enabledStr);
+                end
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -159,8 +168,8 @@ classdef MI4190 < MotionController.AbstractMotionController
         function lim = getForwardSoftLimit(obj, axis)
             try
                 obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:FORW?', axis));
-                lim = obj.recv(100); % TODO: How short should this be?
-                % TODO: Convert to double
+                limStr = obj.recv(16);
+                lim = str2double(limStr);
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -170,8 +179,8 @@ classdef MI4190 < MotionController.AbstractMotionController
         function lim = getReverseSoftLimit(obj, axis)
             try
                 obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:REV?', axis));
-                lim = obj.recv(100); % TODO: How short should this be?
-                % TODO: Convert to double
+                limStr = obj.recv(16);
+                lim = str2double(limStr);
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -261,15 +270,20 @@ classdef MI4190 < MotionController.AbstractMotionController
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 % TODO: Maybe get status instead, and wait until axis not in motion?
 % This would make it easier to watch for limits/faults/etc.
+
+            % velocity is 0 initially (because it hasn't started moving
+            % yet) so pause for a moment before checking it.
+            pause(1);
             vel = obj.getVelocity(axis);
             while (vel ~= 0.0000)
-                pos = obj.getPosition();
-                obj.onStateChange(axis, true, false, pos);
+                %pos = obj.getPosition(axis);
+                %obj.onStateChange(axis, true, false, pos);
+fprintf("%s\n", obj.getStatus(axis));
                 pause(1.5); % don't over-burden the controller
                 vel = obj.getVelocity(axis);
             end
 
-            pos = obj.getPosition();
+            pos = obj.getPosition(axis);
             obj.onStateChange(axis, false, false, pos);
 
             % TODO: Add user-controllable timeout property. (prop on obj?)
@@ -338,14 +352,14 @@ classdef MI4190 < MotionController.AbstractMotionController
                         if length(status) ~= 0
                             status = strcat(status, ", ");
                         end
-                        status = strcat(status, statuses(b));
+                        status = strcat(status, string(statuses(b)));
                     end
                 end
 
                 obj.log.Info(sprintf('Status: %s', status));
             catch e
                 disp(e);
-                obj.log.error(e.message);
+                obj.log.Error(e.message);
             end
         end % end getStatus()
 
