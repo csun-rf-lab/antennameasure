@@ -256,11 +256,16 @@ classdef MI4190 < MotionController.AbstractMotionController
         function waitPosition(obj, axis, position)
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
-% TODO *******************************************************
-% The code I found on github is a bit of a mess. Might need to
-% actually play with the controller to see how to write this best.
-% TODO *******************************************************
-            % TODO: include a timeout?
+            thresh = 0.07; % +/- this many degrees
+            pos = obj.getPosition(axis);
+            while abs(pos - position) > thresh
+                pause(0.5);
+                pos = obj.getPosition(axis);
+            end
+% TODO: Alternatively, check the axis status to see when it has stopped
+% moving?
+
+% TODO: include a timeout?
         end
 
         function waitIdle(obj, axis)
@@ -278,8 +283,8 @@ classdef MI4190 < MotionController.AbstractMotionController
             while (vel ~= 0.0000)
                 %pos = obj.getPosition(axis);
                 %obj.onStateChange(axis, true, false, pos);
-fprintf("%s\n", obj.getStatus(axis));
-                pause(1.5); % don't over-burden the controller
+%fprintf("%s\n", obj.getStatus(axis));
+                pause(0.5); % don't over-burden the controller
                 vel = obj.getVelocity(axis);
             end
 
