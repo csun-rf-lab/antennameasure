@@ -24,6 +24,12 @@ classdef HP8720_Prologix < VNA.HP8720
             obj.connect();
         end
 
+        function setTimeout(obj, t)
+            % TODO: THIS IS A HACK.
+            numPoints = 401;
+            obj.sp.Timeout = ceil(numPoints/100*0.5);
+        end
+
         function connect(obj)
             obj.log.Info(sprintf('connect() %s GPIB#%d\n', obj.comport, obj.addr));
 % TODO: Does this interfere with other open serial port handles?
@@ -52,7 +58,7 @@ classdef HP8720_Prologix < VNA.HP8720
 
                 % Set input buffer to be large enough for trace data to be transferred
                 % The largest data set is 1601 points and this requires about 100 kB
-                vna.InputBufferSize = 100000;
+                sp.InputBufferSize = 100000;
 
                 fclose(sp);
                 fopen(sp);
@@ -135,6 +141,11 @@ classdef HP8720_Prologix < VNA.HP8720
             % because matlab is picky.
 
             obj.log.Debug(sprintf("recv(): %s", msg));
+        end
+
+        function data = fread(obj)
+            data = char(fread(obj.sp, 100000))';
+            obj.log.Debug(sprintf("fread(): %s", data));
         end
     end
 end

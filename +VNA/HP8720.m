@@ -22,6 +22,9 @@ classdef HP8720 < VNA.AbstractVNA
         function init(obj)
             % INIT Initialize VNA for use
 
+            % Preset
+            obj.send("PRES");
+
             % Set to sweep continuously
             obj.send("CONT");
         end
@@ -130,7 +133,7 @@ classdef HP8720 < VNA.AbstractVNA
         function results = measure(obj)
             % MEASURE Return measurement results
 
-            try
+            %try
                 % Read the start/stop frequencies and number of points from the VNA:
                 startFreq = obj.getStartFreq();
                 stopFreq = obj.getStopFreq();
@@ -142,6 +145,7 @@ classdef HP8720 < VNA.AbstractVNA
 
                 % Compute the expected frequency points from the VNA. The 8720B has a 100
                 % KHz frequency resolution, so round to this.
+numPoints
                 freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPoints-1):stopFreq)/1e5);
 
                 % Set the output data format
@@ -150,12 +154,15 @@ classdef HP8720 < VNA.AbstractVNA
                 % Increase the timeout to give enough time for data transfer
                 % This is based on the number of points set on the VNA
                 % The following emperical formula is approximate
-                obj.sp.Timeout = ceil(numPoints/100*0.5);
+% TODO: CAN'T ACCESS sp FROM HERE!!
+%                obj.sp.Timeout = ceil(numPoints/100*0.5);
+
 % TODO: Do we record all of the S-params for what we're doing?
                 % Save each of the S-parameters
-                Snames = ['S11';'S12';'S21';'S22'];
+                %Snames = ['S11';'S12';'S21';'S22'];
+                Snames = ['S21'];
 
-                for n = 1:4
+                for n = 1:1 %%% WTF MATLAB
                     obj.send(Snames(n,:));
 
                     % Perform a single sweep and pause to give time for a single sweep to 
@@ -167,16 +174,18 @@ classdef HP8720 < VNA.AbstractVNA
                     pause(2);
 
                     % Output the data
-                    obj.log.info(sprintf('Transferring %s...', Snames(n,:)));
+                    obj.log.Info(sprintf('Transferring %s...', Snames(n,:)));
                     obj.send("OUTPDATA");
 
-                    dataTran = char(fread(obj.sp))';
-                    obj.log.info("Done.");
+                    %dataTran = char(fread(obj.sp))';
+                    dataTran = obj.fread();
+                    obj.log.Info("Done.");
 
                     % Convert character data to numbers
                     dataNums = textscan(dataTran,'%f%f','Delimiter',',');
 
                     S(:,n) = dataNums{1} + j*dataNums{2};
+S
                 end
 
                 results.startFreq = startFreq;
@@ -189,18 +198,18 @@ classdef HP8720 < VNA.AbstractVNA
 
                 % Set to sweep continuously
                 obj.send('CONT');
-            catch e
-                disp(e);
-                obj.log.Error(e.message);
-            end % try/catch
+            %catch e
+            %    disp(e);
+            %    obj.log.Error(e.message);
+            %end % try/catch
         end % measure()
     end % methods
 
     methods (Access = protected)
         function hz = queryFreqParam(obj, param)
             obj.send(sprintf("%s?", param));
-            hz = obj.recv(30);
-            hz = str2num(hz(1:24));
+            hz = obj.recv(40);
+            hz = str2num(hz);
         end
 
         % value is in hz
