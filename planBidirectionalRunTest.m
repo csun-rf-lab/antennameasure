@@ -36,6 +36,23 @@ classdef planBidirectionalRunTest < matlab.unittest.TestCase
             testCase.verifyEqual(actual, expected)
         end
 
+        function twoAxes_OneFixed(testCase)
+            job.version = 1;
+            job.sweepMode = "bidirectional";
+            job.axes(1).enable = "On";
+            job.axes(1).start = 90;
+            job.axes(1).stop = 90;
+            job.axes(1).increment = 10;
+            job.axes(2).enable = "On";
+            job.axes(2).start = 45;
+            job.axes(2).stop = 90;
+            job.axes(2).increment = 15;
+            job.axes(3).enable = "Off";
+            expected = [90 45; 90 60; 90 75; 90 90];
+            actual = planBidirectionalRun(job);
+            testCase.verifyEqual(actual, expected)
+        end
+
         function threeAxes(testCase)
             job.version = 1;
             job.sweepMode = "bidirectional";
@@ -52,6 +69,20 @@ classdef planBidirectionalRunTest < matlab.unittest.TestCase
             job.axes(3).stop = 20;
             job.axes(3).increment = 10;
             expected = [0 60 10; 0 60 20; 0 70 10; 0 70 20; 10 60 10; 10 60 20; 10 70 10; 10 70 20];
+            actual = planBidirectionalRun(job);
+            testCase.verifyEqual(actual, expected)
+        end
+
+        function oneAxis_NonsensicalIncrement(testCase)
+            job.version = 1;
+            job.sweepMode = "bidirectional";
+            job.axes(1).enable = "On";
+            job.axes(1).start = 0;
+            job.axes(1).stop = 90;
+            job.axes(1).increment = 89;
+            job.axes(2).enable = "Off";
+            job.axes(3).enable = "Off";
+            expected = [0 90]';
             actual = planBidirectionalRun(job);
             testCase.verifyEqual(actual, expected)
         end
