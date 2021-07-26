@@ -24,10 +24,14 @@ classdef HP8720_Prologix < VNA.HP8720
             obj.connect();
         end
 
+        % This is called from inside the HP8720 class
         function setTimeout(obj, t)
-            % TODO: THIS IS A HACK.
-            numPoints = 401;
-            obj.sp.Timeout = ceil(numPoints/100*0.5);
+            obj.sp.Timeout = t;
+        end
+
+        % This is called from inside the HP8720 class
+        function t = getTimeout(obj)
+            t = obj.sp.Timeout;
         end
 
         function connect(obj)

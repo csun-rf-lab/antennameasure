@@ -196,11 +196,15 @@ classdef MI4190 < MotionController.AbstractMotionController
             % TODO: position validation
 
             try
+                pos = obj.getPosition(axis);
+                obj.onStateChange(axis, true, false, pos);
                 obj.state = MotionController.MotionControllerStateEnum.Moving;
                 obj.send(sprintf('CONT1:AXIS(%d):POS:COMM %f\n', axis, position));
                 obj.send(sprintf('CONT1:AXIS(%d):MOT:STAR', axis));
                 obj.waitPosition(axis, position);
                 obj.state = MotionController.MotionControllerStateEnum.Stopped;
+                pos = obj.getPosition(axis);
+                obj.onStateChange(axis, false, false, pos);
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -211,11 +215,15 @@ classdef MI4190 < MotionController.AbstractMotionController
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
             try
+                pos = obj.getPosition(axis);
+                obj.onStateChange(axis, true, false, pos);
                 obj.state = MotionController.MotionControllerStateEnum.Moving;
                 obj.send(sprintf('CONT1:AXIS(%d):POS:INCR %f\n', axis, increment));
                 obj.send(sprintf('CONT1:AXIS(%d):MOT:STAR', axis));
                 obj.waitIdle(axis);
                 obj.state = MotionController.MotionControllerStateEnum.Stopped;
+                pos = obj.getPosition(axis);
+                obj.onStateChange(axis, false, false, pos);
             catch e
 % TODO: Check if axis is moving. May need to update state to Stopped.
                 disp(e);
@@ -259,11 +267,22 @@ classdef MI4190 < MotionController.AbstractMotionController
             thresh = 0.07; % +/- this many degrees
             pos = obj.getPosition(axis);
             while abs(pos - position) > thresh
+                f = obj.hasFault(axis);
+                obj.onStateChange(axis, true, f, pos);
+
+                % Check if user aborted
+                if obj.state == MotionController.MotionControllerStateEnum.Stopped
+                    break;
+                end
+
                 pause(0.5);
                 pos = obj.getPosition(axis);
             end
 % TODO: Alternatively, check the axis status to see when it has stopped
 % moving?
+
+% TODO: Confirm we're no longer moving
+obj.onStateChange(axis, false, false, pos);
 
 % TODO: include a timeout?
         end
@@ -281,9 +300,9 @@ classdef MI4190 < MotionController.AbstractMotionController
             pause(1);
             vel = obj.getVelocity(axis);
             while (vel ~= 0.0000)
-                %pos = obj.getPosition(axis);
-                %obj.onStateChange(axis, true, false, pos);
-%fprintf("%s\n", obj.getStatus(axis));
+                pos = obj.getPosition(axis);
+                f = obj.hasFault(axis);
+                obj.onStateChange(axis, true, f, pos);
                 pause(0.5); % don't over-burden the controller
                 vel = obj.getVelocity(axis);
             end
@@ -368,11 +387,35 @@ classdef MI4190 < MotionController.AbstractMotionController
             end
         end % end getStatus()
 
+        function fault = hasFault(obj, axis)
+            % see also getStatus()
+            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+
+            fault = true;
+            try
+                obj.send(sprintf('CONT1:AXIS(%d):STAT?', axis));
+                currStat = obj.recv(100);
+
+                intStat = uint16(str2double(regexp(currStat,'\d*','match')));
+                if bitget(intStat, 5) == 1
+                    fault = true;
+                    obj.log.Error('Fault!');
+                else
+                    fault = false;
+                end
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
         function stopAll(obj)
             %stopAll Stop motion on all axes, all at once.
 
             try
                 obj.send('CONT1:ABORT');
+% TODO: Verify that we stopped.
+                obj.state = MotionController.MotionControllerStateEnum.Stopped;
             catch e
                 disp(e);
                 obj.log.Error(e.message);

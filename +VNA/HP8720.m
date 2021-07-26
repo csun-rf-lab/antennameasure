@@ -133,7 +133,8 @@ classdef HP8720 < VNA.AbstractVNA
         function results = measure(obj)
             % MEASURE Return measurement results
 
-            %try
+            timeout = obj.getTimeout();
+            try
                 % Read the start/stop frequencies and number of points from the VNA:
                 startFreq = obj.getStartFreq();
                 stopFreq = obj.getStopFreq();
@@ -154,8 +155,7 @@ numPoints
                 % Increase the timeout to give enough time for data transfer
                 % This is based on the number of points set on the VNA
                 % The following emperical formula is approximate
-% TODO: CAN'T ACCESS sp FROM HERE!!
-%                obj.sp.Timeout = ceil(numPoints/100*0.5);
+                obj.setTimeout(ceil(numPoints/100*0.5));
 
 % TODO: Do we record all of the S-params for what we're doing?
                 % Save each of the S-parameters
@@ -170,7 +170,7 @@ numPoints
                     % number of points, IF bandwidth, and averaging
                     obj.send("SING");
 % TODO: Can we poll to see when the operation completes?
-% Yes? Use OPC command.
+% Yes? Use OPC command.  But couldn't get it working?
                     pause(2);
 
                     % Output the data
@@ -185,7 +185,11 @@ numPoints
                     dataNums = textscan(dataTran,'%f%f','Delimiter',',');
 
                     S(:,n) = dataNums{1} + j*dataNums{2};
-S
+
+                    % Sanity check
+                    if length(S(:,n)) ~= numPoints
+                        error('HP8720::measure(): Received wrong number of data points: %d', length(S(:,n)));
+                    end
                 end
 
                 results.startFreq = startFreq;
@@ -198,10 +202,12 @@ S
 
                 % Set to sweep continuously
                 obj.send('CONT');
-            %catch e
-            %    disp(e);
-            %    obj.log.Error(e.message);
-            %end % try/catch
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end % try/catch
+
+            obj.setTimeout(timeout);
         end % measure()
     end % methods
 
