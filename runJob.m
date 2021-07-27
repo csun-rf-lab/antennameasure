@@ -1,4 +1,4 @@
-function [results] = runJob(m, vna, log)
+function [results] = runJob(job, m, vna, log)
 %RUNJOB Run a predetermined measurement job and return the results.
 %   m is a MotionController
 %   vna is a VNA
@@ -7,6 +7,7 @@ function [results] = runJob(m, vna, log)
 
 %%% TODO: A way to stop this thing while it runs.
 
+    axes = job.axes;
 
 % axes = [1];
 % job.positions = (0 : 10 : 90)';

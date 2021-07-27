@@ -133,7 +133,7 @@ classdef HP8720 < VNA.AbstractVNA
         function results = measure(obj)
             % MEASURE Return measurement results
 
-            timeout = obj.getTimeout();
+            timeout = obj.gpib.getTimeout();
             try
                 % Read the start/stop frequencies and number of points from the VNA:
                 startFreq = obj.getStartFreq();
@@ -155,7 +155,7 @@ numPoints
                 % Increase the timeout to give enough time for data transfer
                 % This is based on the number of points set on the VNA
                 % The following emperical formula is approximate
-                obj.setTimeout(ceil(numPoints/100*0.5));
+                obj.gpib.setTimeout(ceil(numPoints/100*0.5));
 
 % TODO: Do we record all of the S-params for what we're doing?
                 % Save each of the S-parameters
@@ -174,7 +174,7 @@ numPoints
                     pause(2);
 
                     % Output the data
-                    obj.log.Info(sprintf('Transferring %s...', Snames(n,:)));
+                    obj.log.Info(sprintf("Transferring %s...", Snames(n,:)));
                     obj.send("OUTPDATA");
 
                     %dataTran = char(fread(obj.sp))';
@@ -188,7 +188,7 @@ numPoints
 
                     % Sanity check
                     if length(S(:,n)) ~= numPoints
-                        error('HP8720::measure(): Received wrong number of data points: %d', length(S(:,n)));
+                        error("HP8720::measure(): Received wrong number of data points: %d", length(S(:,n)));
                     end
                 end
 
@@ -201,13 +201,13 @@ numPoints
                 results.S = S;
 
                 % Set to sweep continuously
-                obj.send('CONT');
+                obj.send("CONT");
             catch e
                 disp(e);
                 obj.log.Error(e.message);
             end % try/catch
 
-            obj.setTimeout(timeout);
+            obj.gpib.setTimeout(timeout);
         end % measure()
     end % methods
 
@@ -227,5 +227,17 @@ numPoints
         function setNumParam(obj, param, value)
             obj.send(sprintf("%s%d;", param, value));
         end
-    end
+
+        % Overridden in Prologix class
+        function send(obj, msg)
+        end
+
+        % Overridden in Prologix class
+        function msg = recv(obj, len)
+        end
+
+        % Overridden in Prologix class
+        function data = fread(obj)
+        end
+    end % protected methods
 end

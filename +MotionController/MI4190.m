@@ -24,7 +24,7 @@ classdef MI4190 < MotionController.AbstractMotionController
             %MI4190 Construct an instance of this class
             %   axes is a vector of all axes identifiers.
 
-             assert(isvector(axes), 'axes must be a vector.');
+             assert(isvector(axes), "axes must be a vector.");
 
             obj.axes = axes;
             obj.log = logger;
@@ -34,7 +34,7 @@ classdef MI4190 < MotionController.AbstractMotionController
             %getErrorCount Return the number of errors in the queue.
 
             try
-                obj.send('SYST:ERR:COUN');
+                obj.send("SYST:ERR:COUN");
                 c = obj.recv(4);
                 ct = uint8(str2double(c));
             catch e
@@ -47,7 +47,7 @@ classdef MI4190 < MotionController.AbstractMotionController
             %getErrors Return all errors in the queue.
 % 0, "No error"
             try
-                obj.send('SYST:ERR:ALL?');
+                obj.send("SYST:ERR:ALL?");
                 errs = obj.recv(100);
                 obj.log.Info(sprintf("Errors: %s", errs));
             catch e
@@ -61,7 +61,7 @@ classdef MI4190 < MotionController.AbstractMotionController
             %   See also getErrorCount() and getErrors().
 
             try
-                obj.send('*CLS');
+                obj.send("*CLS");
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -71,11 +71,11 @@ classdef MI4190 < MotionController.AbstractMotionController
         function name = getName(obj, axis)
             %getName Get the name of a specific axis.
 
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
 
             if obj.connected
                 try
-                    obj.send(sprintf('CONT1:AXIS(%d):NAME?', axis));
+                    obj.send(sprintf("CONT1:AXIS(%d):NAME?", axis));
                     name = obj.recv(32);
                 catch e
                     disp(e);
@@ -92,7 +92,7 @@ classdef MI4190 < MotionController.AbstractMotionController
             %   See MI4190PosUnits enum.
 
             try
-                obj.send(sprintf('CONT1:AXIS(%d):UNIT:POS?', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):UNIT:POS?", axis));
                 c = obj.recv(4);
                 unitsNum = uint8(str2double(c));
 
@@ -117,7 +117,7 @@ classdef MI4190 < MotionController.AbstractMotionController
                     case 8
                         units = MotionController.MI4190PosUnits.Revolution;
                     otherwise
-                        error('Unexpected position units response from controller: ' + unitsNum);
+                        error("Unexpected position units response from controller: " + unitsNum);
                 end
             catch e
                 disp(e);
@@ -127,7 +127,7 @@ classdef MI4190 < MotionController.AbstractMotionController
 
         function enabled = isForwardSoftLimitEnabled(obj, axis)
             try
-                obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:FEN?', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):POS:LIM:FEN?", axis));
                 enabledStr = obj.recv(8);
 
                 enabled = false;
@@ -137,7 +137,7 @@ classdef MI4190 < MotionController.AbstractMotionController
                     case 1
                         enabled = true;
                     otherwise
-                        error('Unexpected soft limit enabled response from controller: ' + enabledStr);
+                        error("Unexpected soft limit enabled response from controller: " + enabledStr);
                 end
             catch e
                 disp(e);
@@ -147,7 +147,7 @@ classdef MI4190 < MotionController.AbstractMotionController
 
         function enabled = isReverseSoftLimitEnabled(obj, axis)
             try
-                obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:REN?', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):POS:LIM:REN?", axis));
                 enabledStr = obj.recv(8);
 
                 enabled = false;
@@ -157,7 +157,7 @@ classdef MI4190 < MotionController.AbstractMotionController
                     case 1
                         enabled = true;
                     otherwise
-                        error('Unexpected soft limit enabled response from controller: ' + enabledStr);
+                        error("Unexpected soft limit enabled response from controller: " + enabledStr);
                 end
             catch e
                 disp(e);
@@ -167,7 +167,7 @@ classdef MI4190 < MotionController.AbstractMotionController
 
         function lim = getForwardSoftLimit(obj, axis)
             try
-                obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:FORW?', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):POS:LIM:FORW?", axis));
                 limStr = obj.recv(16);
                 lim = str2double(limStr);
             catch e
@@ -178,7 +178,7 @@ classdef MI4190 < MotionController.AbstractMotionController
 
         function lim = getReverseSoftLimit(obj, axis)
             try
-                obj.send(sprintf('CONT1:AXIS(%d):POS:LIM:REV?', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):POS:LIM:REV?", axis));
                 limStr = obj.recv(16);
                 lim = str2double(limStr);
             catch e
@@ -192,15 +192,15 @@ classdef MI4190 < MotionController.AbstractMotionController
             %   Axis is numerical, and position is in whatever units
             %   getPosUnits() says the units should be.
             
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
             % TODO: position validation
 
             try
                 pos = obj.getPosition(axis);
                 obj.onStateChange(axis, true, false, pos);
                 obj.state = MotionController.MotionControllerStateEnum.Moving;
-                obj.send(sprintf('CONT1:AXIS(%d):POS:COMM %f\n', axis, position));
-                obj.send(sprintf('CONT1:AXIS(%d):MOT:STAR', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):POS:COMM %f\n", axis, position));
+                obj.send(sprintf("CONT1:AXIS(%d):MOT:STAR", axis));
                 obj.waitPosition(axis, position);
                 obj.state = MotionController.MotionControllerStateEnum.Stopped;
                 pos = obj.getPosition(axis);
@@ -212,14 +212,14 @@ classdef MI4190 < MotionController.AbstractMotionController
         end
 
         function moveIncremental(obj, axis, increment)
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
 
             try
                 pos = obj.getPosition(axis);
                 obj.onStateChange(axis, true, false, pos);
                 obj.state = MotionController.MotionControllerStateEnum.Moving;
-                obj.send(sprintf('CONT1:AXIS(%d):POS:INCR %f\n', axis, increment));
-                obj.send(sprintf('CONT1:AXIS(%d):MOT:STAR', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):POS:INCR %f\n", axis, increment));
+                obj.send(sprintf("CONT1:AXIS(%d):MOT:STAR", axis));
                 obj.waitIdle(axis);
                 obj.state = MotionController.MotionControllerStateEnum.Stopped;
                 pos = obj.getPosition(axis);
@@ -234,10 +234,10 @@ classdef MI4190 < MotionController.AbstractMotionController
         function stop(obj, axis)
             %stop Stop motion on a specific axis.
 
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
 
             try
-                obj.send(sprintf('CONT1:AXIS(%d):MOT:STOP', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):MOT:STOP", axis));
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -248,10 +248,10 @@ classdef MI4190 < MotionController.AbstractMotionController
             %getPosition Return the current position of an axis as a
             %double.
 
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
 
             try
-                obj.send(sprintf('CONT1:AXIS(%d):POS:CURR?', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):POS:CURR?", axis));
                 posChar = obj.recv(100);
                 pos = str2double(convertCharsToStrings(posChar));
             catch e
@@ -262,7 +262,7 @@ classdef MI4190 < MotionController.AbstractMotionController
         end
 
         function waitPosition(obj, axis, position)
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
 
             thresh = 0.07; % +/- this many degrees
             pos = obj.getPosition(axis);
@@ -291,7 +291,7 @@ obj.onStateChange(axis, false, false, pos);
             %waitIdle Query the controller for the axis velocity, and don't
             %return until the velocity is zero.
 
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
 % TODO: Maybe get status instead, and wait until axis not in motion?
 % This would make it easier to watch for limits/faults/etc.
 
@@ -318,10 +318,10 @@ obj.onStateChange(axis, false, false, pos);
             %getVelocity Return the current velocity of an axis as a
             %double.
 
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
 
             try
-                obj.send(sprintf('CONT1:AXIS(%d):VEL:CURR?', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):VEL:CURR?", axis));
                 velChar = obj.recv(100);
                 vel = str2double(convertCharsToStrings(velChar));
             catch e
@@ -338,7 +338,7 @@ obj.onStateChange(axis, false, false, pos);
             %   of the different status values of the axis at a moment in time.
             %   Details on page 3-42 of MI-4192 Manual.
 
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
 
             % Lookup table from the manual (page 3-42).
             % Note that here the "bit number" starts from 1 (because
@@ -365,10 +365,10 @@ obj.onStateChange(axis, false, false, pos);
             };
 
             try
-                obj.send(sprintf('CONT1:AXIS(%d):STAT?', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):STAT?", axis));
                 currStat = obj.recv(100);
 
-                intStat = uint16(str2double(regexp(currStat,'\d*','match')));
+                intStat = uint16(str2double(regexp(currStat, "\d*", "match")));
 
                 status = '';
                 for b = 1:length(statuses)
@@ -380,7 +380,7 @@ obj.onStateChange(axis, false, false, pos);
                     end
                 end
 
-                obj.log.Info(sprintf('Status: %s', status));
+                obj.log.Info(sprintf("Status: %s", status));
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -389,17 +389,17 @@ obj.onStateChange(axis, false, false, pos);
 
         function fault = hasFault(obj, axis)
             % see also getStatus()
-            assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
+            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
 
             fault = true;
             try
-                obj.send(sprintf('CONT1:AXIS(%d):STAT?', axis));
+                obj.send(sprintf("CONT1:AXIS(%d):STAT?", axis));
                 currStat = obj.recv(100);
 
-                intStat = uint16(str2double(regexp(currStat,'\d*','match')));
+                intStat = uint16(str2double(regexp(currStat, "\d*", "match")));
                 if bitget(intStat, 5) == 1
                     fault = true;
-                    obj.log.Error('Fault!');
+                    obj.log.Error("Fault!");
                 else
                     fault = false;
                 end
@@ -413,7 +413,7 @@ obj.onStateChange(axis, false, false, pos);
             %stopAll Stop motion on all axes, all at once.
 
             try
-                obj.send('CONT1:ABORT');
+                obj.send("CONT1:ABORT");
 % TODO: Verify that we stopped.
                 obj.state = MotionController.MotionControllerStateEnum.Stopped;
             catch e
