@@ -1,4 +1,4 @@
-function [steps] = planBidirectionalRun(job)
+function [steps] = planUnidirectionalRun(job)
     % Axes earlier in the precedence array will increment slowest,
     % while axes later will be incremented more quickly.
     % TODO: That's a horrible way to explain this. Come up with a better
