@@ -1,4 +1,4 @@
-function [steps] = planBidirectionalRun(job)
+function [steps] = planUnidirectionalRun(job)
     % Axes earlier in the precedence array will increment slowest,
     % while axes later will be incremented more quickly.
     % TODO: That's a horrible way to explain this. Come up with a better
@@ -6,7 +6,6 @@ function [steps] = planBidirectionalRun(job)
     precedence = [1 2 3];
 
     function [subresult] = calcSteps(remainingAxes)
-% TODO: Maybe this can be generated easily somehow as a Gray code?
         thisAxis = remainingAxes(1);
         s = linspace(thisAxis.start, thisAxis.stop, ((thisAxis.stop - thisAxis.start) / thisAxis.increment)+1);
         if (length(remainingAxes) == 1)
@@ -19,8 +18,6 @@ function [steps] = planBidirectionalRun(job)
                 local = x * ones(length(substeps), 1);
                 localCombined = [local substeps];
                 subresult = [subresult; localCombined];
-
-                substeps = flip(substeps);
             end
         end
     end

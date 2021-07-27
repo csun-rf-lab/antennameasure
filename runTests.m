@@ -4,7 +4,8 @@
 
 clc
 
+planUnidirectionalRunTests = matlab.unittest.TestSuite.fromClass(?planUnidirectionalRunTest);
 planBidirectionalRunTests = matlab.unittest.TestSuite.fromClass(?planBidirectionalRunTest);
-result = run(planBidirectionalRunTests);
+result = run([planUnidirectionalRunTests, planBidirectionalRunTests]);
 
 table(result)
