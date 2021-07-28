@@ -422,4 +422,18 @@ obj.onStateChange(axis, false, false, pos);
             end
         end
     end % end methods
+
+    methods (Access = protected)
+        % Overridden in Prologix class
+        function send(obj, msg)
+        end
+
+        % Overridden in Prologix class
+        function msg = recv(obj, len)
+        end
+
+        % Overridden in Prologix class
+        function data = fread(obj)
+        end
+    end % protected methods
 end

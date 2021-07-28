@@ -43,13 +43,10 @@ classdef PrologixUsb < GPIBBus.AbstractGPIBBus
                 %sp = serialport(obj.comport, baudrate, "Timeout", "0.5");
                 sp = serial(obj.comport);
 
-%TODO: Is this comment correct?
-                % Prologix Controller 4.2 requires CR as command terminator, LF is
-                % optional. The controller terminates internal query responses with CR and
-                % LF. Responses from the instrument are passed through as is. (See Prologix
-                % Controller Manual)
-                %sp.configureTerminator('CR/LF');
-                sp.Terminator = 'CR/LF';
+                % We found by trial and luck that both the MI4190 and
+                % HP87XX were happy to communicate with LF as the terminator.
+                %sp.configureTerminator('LF');
+                sp.Terminator = 'LF';
 
                 % Reduce the timeout from the default 10 seconds to speed things up
                 sp.Timeout = 0.5;
@@ -70,10 +67,8 @@ classdef PrologixUsb < GPIBBus.AbstractGPIBBus
                 % eoi and eos set line endings properly.
                 fprintf(obj.sp, "++mode 1");
                 fprintf(obj.sp, "++auto 1");
-                fprintf(obj.sp, "++eoi 0");
-% TODO: Find the correct value for eos like we did with the motion
-% controller
-%                fprintf(obj.sp, '++eos 2'); % works with 2 or 3
+                fprintf(obj.sp, "++eoi 1");
+                fprintf(obj.sp, '++eos 2');
 
 % TODO: how to detect that something went wrong?
             catch E
@@ -128,17 +123,30 @@ classdef PrologixUsb < GPIBBus.AbstractGPIBBus
             data = char(fread(obj.sp, 100000))';
             obj.log.Debug(sprintf("fread(): %s", data));
         end
+
+        function data = fread_FORM5(obj, numDataPoints)
+            % FREAD_FORM4 Read FORM5 data from the HP VNA.
+
+            data = fread(obj.sp, 2); % "#A"
+            % TODO: Check that we did in fact receive "#A"
+            ct = fread(obj.sp, 2) % # Number of expected bytes
+            % TODO: Convert ct and check that we get the expected number of
+            % bytes in the result.
+            data = fread(obj.sp, numDataPoints*2*4, "float32");
+            obj.log.Debug(sprintf("fread(): %s", data));
+        end
     end % methods
 
     methods (Access = protected)
         function setGPIBAddress(obj, addr)
-            if addr ~= obj.addr
+            obj.log.Info(sprintf("TRYING TO SET ADDRESS %d (currently %d)", addr, obj.addr));
+            %if addr ~= obj.addr
                 obj.addr = addr;
                 if obj.connected
-                    fprintf(obj.sp, "++addr %d", addr);
+                    fprintf(obj.sp, sprintf("++addr %d", addr));
                 end
                 obj.log.Info(sprintf("Changed target GPIB address to %d", addr));
-            end
+            %end
         end
     end % protected methods
 end

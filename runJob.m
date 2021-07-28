@@ -45,6 +45,9 @@ function [results] = runJob(job, m, vna, log)
         meas = vna.measure();
     end
 
+    % Prepare the VNA to take all of our measurements
+    vna.beforeMeasurements();
+
     % to make matlab happy, we need to declare the empty results array as
     % an empty struct having the same fields as the structs we'll append.
     results = struct('position', {}, 'measurements', {});
@@ -52,11 +55,14 @@ function [results] = runJob(job, m, vna, log)
     % loop directly, so using `entry` instead.
     for entry = 1:height(job.positions) % height is new in matlab R2020b
         posArray = job.positions(entry,:);
-        setPosition(posArray);
+        setPosition(posArray, m);
         r.position = posArray;
-        r.measurements = takeMeasurement();
+        r.measurements = takeMeasurement(vna);
         results(end+1) = r;
     end
+
+    % Clean up things with the VNA now that we're done
+    vna.afterMeasurements();
 
     log.Info("Finished job run");
 end

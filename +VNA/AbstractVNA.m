@@ -11,6 +11,12 @@ classdef AbstractVNA< handle
         init(obj)
         % Initialize VNA for use
 
+        beforeMeasurements(obj)
+        % Prepare to take a set of measurements
+
+        afterMeasurements(obj)
+        % Wrap things up after taking a set of measurements
+
         getStartFreq(obj)
         % Get the start frequency for measurements
 

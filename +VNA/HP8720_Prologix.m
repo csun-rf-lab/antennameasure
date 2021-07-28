@@ -54,6 +54,19 @@ classdef HP8720_Prologix < VNA.HP8720
             data = obj.gpib.fread();
             obj.log.Debug(sprintf("fread(): %s", data));
         end
+
+        function data = fread_FORM5(obj, numDataPoints)
+            data = obj.gpib.fread_special(numDataPoints);
+            obj.log.Debug(sprintf("fread(): %s", data));
+        end
+
+        function t = getTimeout(obj)
+            t = obj.gpib.getTimeout();
+        end
+
+        function setTimeout(obj, timeout)
+            obj.gpib.setTimeout(timeout);
+        end
     end % protected methods
 end
 

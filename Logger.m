@@ -6,16 +6,28 @@ classdef Logger < handle % By extending "handle" we get normal class behavior
         log_data
     end
 
+    properties (SetAccess = protected, GetAccess = protected)
+        echo % If true, echo log events to CLI as they come in
+    end
+
     methods
         function obj = Logger()
             obj.Clear();
         end
 
+        function echoToCli(obj, enabled)
+            % ECHO Enable or disable echoing log events to command line.
+            obj.echo = logical(enabled);
+        end
+
         function data = GetLog(obj)
+            % GETLOG Return the log as a single string.
             data = obj.log_data;
         end
 
         function Clear(obj)
+            % CLEAR Clear the contents of the log.
+
             obj.log_data = "";
             if isa(obj.cb, 'function_handle')
                 % Sending an empty string to the callback indicates that
@@ -26,15 +38,30 @@ classdef Logger < handle % By extending "handle" we get normal class behavior
         end
 
         function Info(obj, msg)
-            obj.append(strcat(datestr(now), " :: INFO  :: ", msg));
+            m = strcat(datestr(now), " :: INFO  :: ", msg);
+            if obj.echo
+                fprintf(m + "\n");
+            end
+
+            obj.append(m);
         end
 
         function Error(obj, msg)
-            obj.append(strcat(datestr(now), " :: ERROR :: ", msg));
+            m = strcat(datestr(now), " :: ERROR :: ", msg);
+            if obj.echo
+                fprintf(m + "\n");
+            end
+
+            obj.append(m);
         end
 
         function Debug(obj, msg)
-            obj.append(strcat(datestr(now), " :: DEBUG :: ", msg));
+            m = strcat(datestr(now), " :: DEBUG :: ", msg);
+            if obj.echo
+                fprintf(m + "\n");
+            end
+
+            obj.append(m);
         end
 
         function SetCallback(obj, cb)

@@ -31,9 +31,9 @@ numPts = vna.getNumPts()
 center = vna.getCenterFreq()
 span = vna.getSpan()
 
-axis1pos = m.getPosition(1);
-axis2pos = m.getPosition(2);
-axis4pos = m.getPosition(4);
+axis1pos = m.getPosition(1)
+axis2pos = m.getPosition(2)
+axis4pos = m.getPosition(4)
 
 %% For the grand finale... can we run a job?
 

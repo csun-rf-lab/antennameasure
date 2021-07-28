@@ -3,20 +3,21 @@ classdef HP8720 < VNA.AbstractVNA
     %   This class must be provided a serialport object in the constructor,
     %   and can be used to control any number of axes on the controller.
 
-    properties
+    properties (SetAccess = protected, GetAccess = protected)
         % log,  in superclass
+        dataXferMethod
+        measurementParams
     end
 
     methods
         function obj = HP8720(logger)
             %HP8720 Construct an instance of this class
             obj.log = logger;
-        end
 
-% TODO: Delete after initial testing
-        function resp = TEST_COMM(obj, msg, respLen)
-            obj.send(msg);
-            resp = obj.recv(respLen);
+            % FORM5 is binary and is much faster for large data transfers.
+            % FORM4 is ASCII and much slower for large data transfers,
+            %       but has lower overhead for small data transfers.
+            obj.dataXferMethod = "FORM5";
         end
 
         function init(obj)
@@ -24,6 +25,38 @@ classdef HP8720 < VNA.AbstractVNA
 
             % Preset
             obj.send("PRES");
+
+            % Set to sweep continuously
+            obj.send("CONT");
+        end
+
+        function beforeMeasurements(obj)
+            % BEFOREMEASUREMENTS Prepare to take a set of measurements
+
+            % Read the start/stop frequencies and number of points from the VNA:
+            obj.measurementParams.startFreq = obj.getStartFreq();
+            obj.measurementParams.stopFreq = obj.getStopFreq();
+            obj.measurementParams.numPoints = obj.getNumPts();
+
+            obj.measurementParams.SCAL = obj.queryFreqParam("SCAL");
+            obj.measurementParams.REFP = obj.queryFreqParam("REFP");
+            obj.measurementParams.REFV = obj.queryFreqParam("REFV");
+
+            % We only record S21.
+            % Once set, we pause for a moment so the VNA can catch up.
+            obj.send("S21");
+            pause(2);
+
+            % Set the output data format
+            obj.send(obj.dataXferMethod);
+
+            % Make sure there's no junk in the buffer.
+            obj.fread();
+        end
+
+        function afterMeasurements(obj)
+            % AFTERMEASUREMENTS Wrap things up after taking a set of
+            % measurements.
 
             % Set to sweep continuously
             obj.send("CONT");
@@ -133,81 +166,69 @@ classdef HP8720 < VNA.AbstractVNA
         function results = measure(obj)
             % MEASURE Return measurement results
 
-            timeout = obj.gpib.getTimeout();
+            startFreq = obj.measurementParams.startFreq;
+            stopFreq = obj.measurementParams.stopFreq;
+            numPoints = obj.measurementParams.numPoints;
+
+            timeout = obj.getTimeout();
             try
-                % Read the start/stop frequencies and number of points from the VNA:
-                startFreq = obj.getStartFreq();
-                stopFreq = obj.getStopFreq();
-                numPoints = obj.getNumPts();
-
-                SCAL = obj.queryFreqParam("SCAL");
-                REFP = obj.queryFreqParam("REFP");
-                REFV = obj.queryFreqParam("REFV");
-
                 % Compute the expected frequency points from the VNA. The 8720B has a 100
                 % KHz frequency resolution, so round to this.
-numPoints
                 freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPoints-1):stopFreq)/1e5);
-
-                % Set the output data format
-                obj.send("FORM4");
 
                 % Increase the timeout to give enough time for data transfer
                 % This is based on the number of points set on the VNA
-                % The following emperical formula is approximate
-                obj.gpib.setTimeout(ceil(numPoints/100*0.5));
-
-% TODO: Do we record all of the S-params for what we're doing?
-                % Save each of the S-parameters
-                %Snames = ['S11';'S12';'S21';'S22'];
-                Snames = ['S21'];
-
-                for n = 1:1 %%% WTF MATLAB
-                    obj.send(Snames(n,:));
-
-                    % Perform a single sweep and pause to give time for a single sweep to 
-                    % complete. This may need to be adjusted based on the frequency span, 
-                    % number of points, IF bandwidth, and averaging
-                    obj.send("SING");
-% TODO: Can we poll to see when the operation completes?
-% Yes? Use OPC command.  But couldn't get it working?
-                    pause(2);
-
-                    % Output the data
-                    obj.log.Info(sprintf("Transferring %s...", Snames(n,:)));
-                    obj.send("OUTPDATA");
-
-                    %dataTran = char(fread(obj.sp))';
-                    dataTran = obj.fread();
-                    obj.log.Info("Done.");
-
-                    % Convert character data to numbers
-                    dataNums = textscan(dataTran,'%f%f','Delimiter',',');
-
-                    S(:,n) = dataNums{1} + j*dataNums{2};
-
-                    % Sanity check
-                    if length(S(:,n)) ~= numPoints
-                        error("HP8720::measure(): Received wrong number of data points: %d", length(S(:,n)));
-                    end
+                if obj.dataXferMethod == "FORM5"
+                    % 1 second works for FORM5,
+                    % even for the max number of data points.
+                    obj.setTimeout(1);
+                else
+                    % FORM4
+                    % The following emperical formula is approximate.
+                    obj.setTimeout(ceil(numPoints/100*0.5));
                 end
 
-                results.startFreq = startFreq;
-                results.stopFreq = stopFreq;
-                results.SCAL = SCAL;
-                results.REFP = REFP;
-                results.REFV = REFV;
-                results.freq = freq;
-                results.S = S;
+                % Perform a single sweep and pause to give time for a single sweep to
+                % complete. This may need to be adjusted based on the frequency span,
+                % number of points, IF bandwidth, and averaging
+                obj.send("SING");
+% TODO: Can we poll to see when the operation completes?
+% Yes? Use OPC command.  But couldn't get it working?
 
-                % Set to sweep continuously
-                obj.send("CONT");
+                % Output the data
+                obj.log.Info("Transferring S21 data...");
+                obj.send("OUTPDATA");
+
+                if obj.dataXferMethod == "FORM4"
+                    dataTran = obj.fread();
+                    % Convert character data to numbers
+                    dataNums = textscan(dataTran,'%f%f','Delimiter',',');
+                    S21 = dataNums{1} + j*dataNums{2};
+                else % FORM5
+                    dataTran = obj.fread_special(numPoints);
+                    S21 = dataTran(1:2:end) + j*dataTran(2:2:end);
+                end
+
+                % Sanity check
+                if length(S21) ~= numPoints
+                    error("HP8720::measure(): Received wrong number of data points: %d", length(S21));
+                end
+
+                obj.log.Info("Done.");
+
+                results.startFreq = obj.measurementParams.startFreq;
+                results.stopFreq = obj.measurementParams.stopFreq;
+                results.SCAL = obj.measurementParams.SCAL;
+                results.REFP = obj.measurementParams.REFP;
+                results.REFV = obj.measurementParams.REFV;
+                results.freq = freq;
+                results.S21 = S21;
             catch e
                 disp(e);
                 obj.log.Error(e.message);
             end % try/catch
 
-            obj.gpib.setTimeout(timeout);
+            obj.setTimeout(timeout);
         end % measure()
     end % methods
 
@@ -238,6 +259,18 @@ numPoints
 
         % Overridden in Prologix class
         function data = fread(obj)
+        end
+
+        % Overridden in Prologix class
+        function data = fread_FORM5(obj, numDataPoints)
+        end
+
+        % Overridden in Prologix class
+        function t = getTimeout(obj)
+        end
+
+        % Overridden in Prologix class
+        function setTimeout(obj, timeout)
         end
     end % protected methods
 end
