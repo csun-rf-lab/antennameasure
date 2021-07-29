@@ -30,6 +30,18 @@ classdef MI4190 < MotionController.AbstractMotionController
             obj.log = logger;
         end
 
+        function check(obj)
+            try
+                obj.send("*idn?");
+                idn = obj.recv(100);
+                obj.log.Info(sprintf("Position Controller ID: %s\n", idn));
+                obj.setConnectedState(true);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
         function ct = getErrorCount(obj)
             %getErrorCount Return the number of errors in the queue.
 
