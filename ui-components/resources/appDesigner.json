@@ -1,0 +1,23 @@
+{
+  "components": [
+    {
+      "className": "MotionControllerAxis",
+      "componentName": "MotionControllerAxis",
+      "description": "Controls for a single motion axis",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsSAAALEgHS3X78AAABGUlEQVRIiWNsaGj4z0ACqK+vZwSp7ujouPPz509lbDrZ2dnvVlRUqIDYLAwQTUTZsHz5cjgbZDgufY2NjXCLWWAMR0cnnAbv378Pq/i3b98IOgpuAS5DcAFQMHR3d+MMIpJ8gM0BsDCmmQ9IimQGMuKA5Egm1QcMpEYyqXFALBgcqQib5TRPRcQCiuKA1bUVazn2e3c1I9V80NWRicIvq5iOwmdRU1NDKcSoDVgiIyMZaWY6AwMDEy0NBwHG9vZ2nGUKCCCXKyCgWMaJNWIrV//Bqp8FX5kCAsjlCgy0Fbeh8Kt6q8B0SOsUFPE11TmQVERMmUIuoHkc0NwCFnyFFgggF1wwAAtzdAAKc3TA+P8/Sa0W0gADAwMAacOCsonAW8UAAAAASUVORK5CYII=",
+      "category": "My Components",
+      "authorName": "",
+      "authorEmail": "",
+      "version": "1.0",
+      "avatar": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAAAB3RJTUUH5QceBSI6786BVAAAAadJREFUeJzt3DFqg1AAgGFTClmyiTdwy1FcvIbncXJ08Ai5gpDd0TE4KXiBQAeplJbW/sOzaft/kwQxL3/eCwSeHuZ5jvQ9Tz89gN/EWICxAGMBxgKMBRgLMBZgLOB5t3fq+z7QldM0DXTld/aLFYX5VOG+g49choCxAGMBxgKMBRgLMBZgLMBYgLEAYwHGAowFGAswFmAswFiAsQBjAcYCjAUYCzAWYCzAWICxAGMBxgKMBRgLMBZgLIBtZhvHseu6KIrO53OSJGGG9LjYzLper3me53netm2gAT0ylyFgLMBYwPYPfFEU9/t9OR6GYTmoqupyuaznlGV5PB5DjO+hHDbvZI3jeI31mdvtdjqdvj6n7/tAW7t32wfvMgS2Y03TNL9qmmZ5sa7r+Y3NafU3OLMAYwHGAowFsD/SWZb954dmOLMAYwHGAowFGAswFmAswFiAsQBjAcYCjAUYCzAWYCzAWICxAGMBxgKMBRgLMBZgLMBYgLEAYwHGAowFGAswFmAsYNendu/5hO0QtvfBa+UyBIwFGAswFmAswFiAsQBjAcYCXgAS4VUd2TPBDQAAAABJRU5ErkJggg==",
+      "defaultPosition": [
+        1,
+        1,
+        100,
+        100
+      ]
+    }
+  ],
+  "schema": 1,
+  "MATLABRelease": "R2021a"
+}

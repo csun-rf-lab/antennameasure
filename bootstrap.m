@@ -5,11 +5,14 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 % (such as comport), but there needs to be somewhere that the appropriate
 % drivers are set up. This is that place.
 
+    % Add UI components to path so application can use them
+    addpath("./ui-components");
+
 % TODO: Accept config from the application (comport, etc.)
 
     MI4190_gpib_addr = 4;
     HP8720_gpib_addr = 16;
-    axes = [1 2 4];
+    axes = [1 2 3]; % TODO: NEED TO HANDLE THIS: [1 2 4]
     comport = "/dev/ttyUSB0";
 
     buslog = Logger();
@@ -19,8 +22,8 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 
     % Set up motion controller
     motlog = Logger();
-    m = MotionController.MI4190_Prologix(b, MI4190_gpib_addr, axes, motlog);
-    %m = MotionController.Dummy(axes, motlog);
+    %m = MotionController.MI4190_Prologix(b, MI4190_gpib_addr, axes, motlog);
+    m = MotionController.Dummy(axes, motlog);
 
     % Set up VNA
     vnalog = Logger();

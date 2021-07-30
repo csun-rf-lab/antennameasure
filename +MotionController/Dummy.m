@@ -39,9 +39,9 @@ classdef Dummy < MotionController.AbstractMotionController
 
         function name = getName(obj, axis)
             axes = {
-                "AZ Axis",
-                "AUTROLL Axis",
-                "Tx Pol Axis"
+                "AZ Axis (TEST)",
+                "AUTROLL Axis (TEST)",
+                "Tx Pol Axis (TEST)"
             };
 
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
@@ -67,6 +67,10 @@ classdef Dummy < MotionController.AbstractMotionController
             obj.onStateChange(axis, true, false, obj.positions(axis));
             obj.waitPosition(axis, position);
 
+            if position == 999
+                obj.onStateChange(axis, false, true, obj.positions(axis));
+            end
+
             obj.state = MotionController.MotionControllerStateEnum.Stopped;
             obj.log.Debug(sprintf("Dummy::moveTo(%d, %f): STOPPED", axis, position));
         end
@@ -76,9 +80,11 @@ classdef Dummy < MotionController.AbstractMotionController
 
             obj.log.Debug(sprintf("Dummy::moveIncremental(%d, %f): MOVING", axis, increment));
             obj.state = MotionController.MotionControllerStateEnum.Moving;
+            obj.onStateChange(axis, true, false, obj.positions(axis));
             obj.positions(axis) = obj.positions(axis) + increment;
             obj.waitIdle(axis);
             obj.state = MotionController.MotionControllerStateEnum.Stopped;
+            obj.onStateChange(axis, false, false, obj.positions(axis));
             obj.log.Debug(sprintf("Dummy::moveIncremental(%d, %f): STOPPED", axis, increment));
         end
 
