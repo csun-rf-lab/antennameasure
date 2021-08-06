@@ -1,5 +1,9 @@
 # TODO
 
+* Write the method for moving multiple axes at once.
+* Collect the measurement results and write them out to a file.
+* VNA view while we're actively running the measurements.
+* JobRunner that gives progress updates and can be stopped.
 * Originally the MI4190 and HP8720 classes were built with _Prologix extensions and it made sense at the time. However, since then things have changed and the separate classes no longer make sense. To clean up, the _Prologix classes should be integrated back into the core classes.
 * There is still a nasty bug related to the log in MotionControllerApp. Try opening and closing it a few times in a row and you'll see what I mean.
 
