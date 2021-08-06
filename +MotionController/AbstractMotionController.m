@@ -5,6 +5,7 @@ classdef AbstractMotionController< handle
         connected = false % bool: connected to controller?
         axes % vector of all axis identifiers
         cb   % callback function handle
+        ec   % Container for emitting events
         log  % Logger object
         onConnectStateChangeCb
     end
@@ -33,6 +34,14 @@ classdef AbstractMotionController< handle
     end
 
     methods
+        function obj = AbstractMotionController()
+            obj.ec = Event.MotionControllerStateChangeContainer;
+        end
+
+        function ec = getEventContainer(obj)
+            ec = obj.ec;
+        end
+
         function conn = isConnected(obj)
             conn = obj.connected;
         end
@@ -44,14 +53,6 @@ classdef AbstractMotionController< handle
             for x = 1:length(obj.axes)
                 obj.stop(obj.axes(x))
             end
-        end
-
-        function setOnStateChangeCallback(obj, cb)
-            obj.cb = cb;
-        end
-
-        function clearOnStateChangeCallback(obj)
-            clear obj.cb;
         end
 
         function setOnConnectStateChangeCallback(obj, cb)
@@ -74,6 +75,10 @@ classdef AbstractMotionController< handle
             state.moving = moving;
             state.fault = fault;
             state.position = position;
+
+            % I couldn't figure out a sane way to emit events from here,
+            % so we go through this other class:
+            obj.ec.onStateChange(state);
 
             if isa(obj.cb, 'function_handle')
                 obj.cb(state);

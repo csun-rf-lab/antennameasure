@@ -56,6 +56,32 @@ classdef Dummy < MotionController.AbstractMotionController
             units = MotionController.MI4190PosUnits.Degree;
         end
 
+        function lim = getForwardSoftLimit(obj, axis)
+            switch axis
+                case 1
+                    lim = 90;
+                case 2
+                    lim = 180;
+                case 3
+                    lim = 180;
+                otherwise
+                    lim = 11;
+            end
+        end
+
+        function lim = getReverseSoftLimit(obj, axis)
+            switch axis
+                case 1
+                    lim = -90;
+                case 2
+                    lim = -180;
+                case 3
+                    lim = -180;
+                otherwise
+                    lim = -11;
+            end
+        end
+
         function moveTo(obj, axis, position)
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
