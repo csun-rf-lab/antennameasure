@@ -89,7 +89,7 @@ classdef Dummy < MotionController.AbstractMotionController
             obj.state = MotionController.MotionControllerStateEnum.Moving;
             start = obj.positions(axis);
 
-            obj.positions(axis) = position - start/2;
+            obj.positions(axis) = start + (position - start)/2;
             obj.onStateChange(axis, true, false, obj.positions(axis));
             obj.waitPosition(axis, position);
 

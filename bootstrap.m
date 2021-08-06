@@ -27,5 +27,6 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 
     % Set up VNA
     vnalog = Logger();
-    vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
+    %vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
+    vna = VNA.Dummy(vnalog);
 end

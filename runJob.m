@@ -1,5 +1,5 @@
-function [results] = runJob(job, m, vna, log)
-%RUNJOB Run a predetermined measurement job and return the results.
+function [results] = runJob(plan, m, vna, log)
+%RUNJOB Run a predetermined measurement job plan and return the results.
 %   m is a MotionController
 %   vna is a VNA
 %   log is a Logger
@@ -8,9 +8,9 @@ function [results] = runJob(job, m, vna, log)
 %%% TODO: A way to stop this thing while it runs.
 
     % Example: [1 2]
-    axes = job.axes;
+    axes = plan.axes;
 
-    % job.positions example:
+    % plan.steps example:
     % [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
 
     log.Info("Starting job run");
@@ -48,8 +48,8 @@ function [results] = runJob(job, m, vna, log)
     results = struct('position', {}, 'measurements', {});
     % I don't know how to get the individual sets of positions out of the
     % loop directly, so using `entry` instead.
-    for entry = 1:height(job.positions) % height is new in matlab R2020b
-        posArray = job.positions(entry,:);
+    for entry = 1:height(plan.steps) % height is new in matlab R2020b
+        posArray = plan.steps(entry,:);
         setPosition(posArray, m);
         r.position = posArray;
         r.measurements = takeMeasurement(vna);
