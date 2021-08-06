@@ -1,4 +1,4 @@
-function [steps] = planBidirectionalRun(job)
+function [axes, steps] = planBidirectionalRun(job)
     % Axes earlier in the precedence array will increment slowest,
     % while axes later will be incremented more quickly.
     % TODO: That's a horrible way to explain this. Come up with a better
@@ -6,7 +6,6 @@ function [steps] = planBidirectionalRun(job)
     precedence = [1 2 3];
 
     function [subresult] = calcSteps(remainingAxes)
-% TODO: Maybe this can be generated easily somehow as a Gray code?
         thisAxis = remainingAxes(1);
         s = linspace(thisAxis.start, thisAxis.stop, ((thisAxis.stop - thisAxis.start) / thisAxis.increment)+1);
         if (length(remainingAxes) == 1)
@@ -15,7 +14,6 @@ function [steps] = planBidirectionalRun(job)
             subresult = [];
             substeps = calcSteps(remainingAxes(2:end));
             for x = s
-% TODO: Need to store this in a way that the axis ids are included.
                 local = x * ones(length(substeps), 1);
                 localCombined = [local substeps];
                 subresult = [subresult; localCombined];
@@ -28,11 +26,13 @@ function [steps] = planBidirectionalRun(job)
     % First, determine which axes we're going to control,
     % in the appropriate order (with respect to "precedence")
     enabledAxes = [];
+    axes = [];
     for i = (1:length(precedence))
         axisNum = precedence(i);
         axis = job.axes(axisNum);
         if (axis.enable == "On")
             enabledAxes = [enabledAxes axis];
+            axes(end + 1) = axisNum;
         end
     end
 

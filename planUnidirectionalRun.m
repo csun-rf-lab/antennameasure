@@ -1,4 +1,4 @@
-function [steps] = planUnidirectionalRun(job)
+function [axes, steps] = planUnidirectionalRun(job)
     % Axes earlier in the precedence array will increment slowest,
     % while axes later will be incremented more quickly.
     % TODO: That's a horrible way to explain this. Come up with a better
@@ -14,7 +14,6 @@ function [steps] = planUnidirectionalRun(job)
             subresult = [];
             substeps = calcSteps(remainingAxes(2:end));
             for x = s
-% TODO: Need to store this in a way that the axis ids are included.
                 local = x * ones(length(substeps), 1);
                 localCombined = [local substeps];
                 subresult = [subresult; localCombined];
@@ -25,11 +24,13 @@ function [steps] = planUnidirectionalRun(job)
     % First, determine which axes we're going to control,
     % in the appropriate order (with respect to "precedence")
     enabledAxes = [];
+    axes = [];
     for i = (1:length(precedence))
         axisNum = precedence(i);
         axis = job.axes(axisNum);
         if (axis.enable == "On")
             enabledAxes = [enabledAxes axis];
+            axes(end + 1) = axisNum;
         end
     end
 

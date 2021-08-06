@@ -12,9 +12,9 @@ function [plan] = planJobRun(job)
 
     switch (job.sweepMode)
         case "bidirectional"
-            plan.steps = planBidirectionalRun(job);
+            [plan.axes, plan.steps] = planBidirectionalRun(job);
         case "unidirectional"
-            plan.steps = planUnidirectionalRun(job);
+            [plan.axes] = planUnidirectionalRun(job);
         otherwise
             warning("Unexpected sweep mode. No measurement points calculated.");
     end

@@ -7,16 +7,11 @@ function [results] = runJob(job, m, vna, log)
 
 %%% TODO: A way to stop this thing while it runs.
 
+    % Example: [1 2]
     axes = job.axes;
 
-% axes = [1];
-% job.positions = (0 : 10 : 90)';
-%
-%axes = [1 2];
-%job.positions = [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
-% 
-% axes = [1 2 4];
-% job.positions = [0 60 10; 0 60 20; 0 70 10; 0 70 20; 10 60 10; 10 60 20; 10 70 10; 10 70 20];
+    % job.positions example:
+    % [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
 
     log.Info("Starting job run");
 
