@@ -82,6 +82,32 @@ classdef Dummy < MotionController.AbstractMotionController
             end
         end
 
+        function moveTo(obj, axes, positions)
+            for a = 1:length(axes)
+                assert(ismember(axes(a), obj.axes), "axis must be a valid axis.");
+            end
+
+            for a = 1:length(axes)
+                obj.log.Debug(sprintf("Dummy::moveAxisTo(%d, %f): MOVING", axes(a), positions(a)));
+            end
+
+            obj.state = MotionController.MotionControllerStateEnum.Moving;
+
+            for a = 1:length(axes)
+                axis = axes(a);
+                start = obj.positions(axis);
+                desired = positions(a);
+                obj.positions(axis) = start + (desired - start)/2;
+            end
+
+            obj.waitPositionMultiple(axes, positions);
+
+            obj.state = MotionController.MotionControllerStateEnum.Stopped;
+            for a = 1:length(axes)
+                obj.log.Debug(sprintf("Dummy::moveAxisTo(%d, %f): STOPPED", axes(a), positions(a)));
+            end
+        end
+
         function moveAxisTo(obj, axis, position)
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
@@ -123,6 +149,25 @@ classdef Dummy < MotionController.AbstractMotionController
 
             obj.log.Debug(sprintf("Dummy::getPosition(%d): %f", axis, obj.positions(axis)));
             pos = obj.positions(axis);
+        end
+
+        function waitPositionMultiple(obj, axes, positions)
+            for a = 1:length(axes)
+                assert(ismember(axes(a), obj.axes), "axis must be a valid axis.");
+            end
+
+            for a = 1:length(axes)
+                obj.log.Debug(sprintf("Dummy::waitPosition(%d, %f)", axes(a), positions(a)));
+            end
+
+            pause (3);
+
+            for a = 1:length(axes)
+                axis = axes(a);
+                position = positions(a);
+                obj.positions(axis) = position;
+                obj.onStateChange(axis, false, false, obj.positions(axis));
+            end
         end
 
         function waitPosition(obj, axis, position)

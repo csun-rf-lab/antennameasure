@@ -29,9 +29,7 @@ classdef Dummy < VNA.AbstractVNA
         function afterMeasurements(obj)
             % AFTERMEASUREMENTS Wrap things up after taking a set of
             % measurements.
-
-            % Set to sweep continuously
-            obj.send("CONT");
+            % Nothing to do here in dummy
         end
 
         function start = getStartFreq(obj)

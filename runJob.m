@@ -17,20 +17,23 @@ function [results] = runJob(plan, m, vna, log)
 
     % m is a MotionController
     function setPosition(posArray, m)
-% TODO: A position function that lets you set all of the axes
-% simultaneously
+
         if size(posArray,2) == 1
             log.Info(sprintf("Moving to (" + string(posArray) + ")"));
         else
             log.Info(sprintf("Moving to (" + join(string(posArray), ",") + ")"));
         end
 
-        for x = 1:length(axes)
-            axis = axes(x);
-            pos = posArray(x);
-            log.Debug(sprintf("Moving axis %d to %d", axis, pos));
-            m.moveAxisTo(axis, pos);
-        end
+        % The fast way: Setting all axes at once
+        m.moveTo(axes, posArray);
+
+        % The slow way: setting the axis positions one at a time
+        % for x = 1:length(axes)
+        %     axis = axes(x);
+        %     pos = posArray(x);
+        %     log.Debug(sprintf("Moving axis %d to %d", axis, pos));
+        %     m.moveAxisTo(axis, pos);
+        % end
     end
 
     % vna is the vna object, which has already been configured for the

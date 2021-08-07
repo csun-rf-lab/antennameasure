@@ -11,6 +11,9 @@ classdef AbstractMotionController< handle
     end
 
     methods (Abstract)
+        moveTo(obj, axes, positions)
+        % Move a set of axes to specific positions.
+
         moveAxisTo(obj, axis, position)
         % Move a specific axis to a specific position.
 

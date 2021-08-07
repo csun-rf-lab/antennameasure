@@ -199,6 +199,46 @@ classdef MI4190 < MotionController.AbstractMotionController
             end
         end
 
+        function moveTo(obj, axes, positions)
+            %moveTo Move a set of axes to specific positions.
+            %   Axes is a numerical vector, and positions a vector
+            %   with the same length as axes.
+
+            for a = 1:length(axes)
+                assert(ismember(axes(a), obj.axes), "axis must be a valid axis.");
+            end
+            % TODO: position validation
+
+            try
+                for a = 1:length(axes)
+                    axis = axes(a);
+                    pos = obj.getPosition(axis);
+                    obj.onStateChange(axis, true, false, pos);
+                end
+
+                obj.state = MotionController.MotionControllerStateEnum.Moving;
+
+                for a = 1:length(axes)
+                    axis = axes(a);
+                    position = positions(a);
+                    obj.send(sprintf("CONT1:AXIS(%d):POS:COMM %f\n", axis, position));
+                    obj.send(sprintf("CONT1:AXIS(%d):MOT:STAR", axis));
+                end
+
+                obj.waitPositionMultiple(axes, positions);
+
+                obj.state = MotionController.MotionControllerStateEnum.Stopped;
+
+                for a = 1:length(axes)
+                    pos = obj.getPosition(axis);
+                    obj.onStateChange(axis, false, false, pos);
+                end
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
         function moveAxisTo(obj, axis, position)
             %moveAxisTo Move a specific axis to a specific position.
             %   Axis is numerical, and position is in whatever units
@@ -271,6 +311,47 @@ classdef MI4190 < MotionController.AbstractMotionController
                 obj.log.Error(e.message);
                 pos = -99999999999;
             end
+        end
+
+        function pos = getPositionMultiple(obj, axes)
+            pos = zeros(1, length(axes));
+            for a = 1:length(axes)
+% TODO: Do we need a delay in here?
+                pos(a) = obj.getPosition(axes(a));
+            end
+        end
+
+        function waitPositionMultiple(obj, axes, positions)
+            for a = 1:length(axes)
+                assert(ismember(axes(a), obj.axes), "axis must be a valid axis.");
+            end
+
+            thresh = 0.07; % +/- this many degrees
+            pos = obj.getPositionMultiple(axes);
+            while abs(pos - positions) > thresh
+                f = obj.hasFault(axis);
+
+                for a = 1:length(axes)
+                    obj.onStateChange(axis(a), true, f, pos(a));
+                end
+
+                % Check if user aborted
+                if obj.state == MotionController.MotionControllerStateEnum.Stopped
+                    break;
+                end
+
+                pause(0.5);
+                pos = obj.getPositionMultiple(axes);
+            end
+% TODO: Alternatively, check the axis status to see when it has stopped
+% moving?
+
+% TODO: Confirm we're no longer moving
+                for a = 1:length(axes)
+                    obj.onStateChange(axis(a), true, f, pos(a));
+                end
+
+% TODO: include a timeout?
         end
 
         function waitPosition(obj, axis, position)
