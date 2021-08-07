@@ -11,7 +11,7 @@ classdef AbstractMotionController< handle
     end
 
     methods (Abstract)
-        moveTo(obj, axis, position)
+        moveAxisTo(obj, axis, position)
         % Move a specific axis to a specific position.
 
         moveIncremental(obj, axis, increment)

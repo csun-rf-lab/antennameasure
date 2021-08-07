@@ -199,8 +199,8 @@ classdef MI4190 < MotionController.AbstractMotionController
             end
         end
 
-        function moveTo(obj, axis, position)
-            %moveTo Move a specific axis to a specific position.
+        function moveAxisTo(obj, axis, position)
+            %moveAxisTo Move a specific axis to a specific position.
             %   Axis is numerical, and position is in whatever units
             %   getPosUnits() says the units should be.
             

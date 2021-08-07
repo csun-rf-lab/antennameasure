@@ -82,10 +82,10 @@ classdef Dummy < MotionController.AbstractMotionController
             end
         end
 
-        function moveTo(obj, axis, position)
+        function moveAxisTo(obj, axis, position)
             assert(ismember(axis, obj.axes), 'axis must be a valid axis.');
 
-            obj.log.Debug(sprintf("Dummy::moveTo(%d, %f): MOVING", axis, position));
+            obj.log.Debug(sprintf("Dummy::moveAxisTo(%d, %f): MOVING", axis, position));
             obj.state = MotionController.MotionControllerStateEnum.Moving;
             start = obj.positions(axis);
 
@@ -98,7 +98,7 @@ classdef Dummy < MotionController.AbstractMotionController
             end
 
             obj.state = MotionController.MotionControllerStateEnum.Stopped;
-            obj.log.Debug(sprintf("Dummy::moveTo(%d, %f): STOPPED", axis, position));
+            obj.log.Debug(sprintf("Dummy::moveAxisTo(%d, %f): STOPPED", axis, position));
         end
 
         function moveIncremental(obj, axis, increment)
@@ -132,7 +132,7 @@ classdef Dummy < MotionController.AbstractMotionController
             pause(2);
 
             % set the final position now. we already went halfway there in
-            % moveTo().
+            % moveAxisTo().
             obj.positions(axis) = position;
             obj.onStateChange(axis, false, false, obj.positions(axis));
         end

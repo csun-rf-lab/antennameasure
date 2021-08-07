@@ -29,7 +29,7 @@ function [results] = runJob(plan, m, vna, log)
             axis = axes(x);
             pos = posArray(x);
             log.Debug(sprintf("Moving axis %d to %d", axis, pos));
-            m.moveTo(axis, pos);
+            m.moveAxisTo(axis, pos);
         end
     end
 
