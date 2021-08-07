@@ -1,7 +1,6 @@
 # TODO
 
 * Test the method for moving multiple axes at once.
-* Set proper axes in motion controller (rather than sequentially numbered)
 * Collect the measurement results and write them out to a file.
 * VNA view while we're actively running the measurements.
 * JobRunner that gives progress updates and can be stopped.
