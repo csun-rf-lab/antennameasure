@@ -1,5 +1,6 @@
 function [results] = runJob(plan, m, vna, log)
 %RUNJOB Run a predetermined measurement job plan and return the results.
+%   plan is the output of planJobRun()
 %   m is a MotionController
 %   vna is a VNA
 %   log is a Logger
@@ -61,6 +62,9 @@ function [results] = runJob(plan, m, vna, log)
 
     % Clean up things with the VNA now that we're done
     vna.afterMeasurements();
+
+    % Remap the data into a useful format
+    results = remapMeasurements(results);
 
     log.Info("Finished job run");
 end

@@ -6,6 +6,7 @@ clc
 
 planUnidirectionalRunTests = matlab.unittest.TestSuite.fromClass(?planUnidirectionalRunTest);
 planBidirectionalRunTests = matlab.unittest.TestSuite.fromClass(?planBidirectionalRunTest);
-result = run([planUnidirectionalRunTests, planBidirectionalRunTests]);
+remapMeasurementsTest = matlab.unittest.TestSuite.fromClass(?remapMeasurementsTest);
+result = run([planUnidirectionalRunTests, planBidirectionalRunTests, remapMeasurementsTest]);
 
 table(result)
