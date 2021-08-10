@@ -1,8 +1,9 @@
 # TODO
 
-* Measurement results: Include real positions as separate vector in the results (alongside the ideal ones)
-* VNA view while we're actively running the measurements.
+* Measurement results: check actualPos value in final measurement results
 * JobRunner that gives progress updates and can be stopped.
+* Try a simpler approach for the MotionController event handling
+* VNA view while we're actively running the measurements.
 * Cache axis names so it's not always a slow lookup
 * Show the measurements as they happen (defaults for single axis/freq, dropdowns for more complex jobs)
 * Originally the MI4190 and HP8720 classes were built with _Prologix extensions and it made sense at the time. However, since then things have changed and the separate classes no longer make sense. To clean up, the _Prologix classes should be integrated back into the core classes.

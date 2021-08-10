@@ -13,11 +13,11 @@ classdef Dummy < MotionController.AbstractMotionController
     end
 
     methods
-        function obj = Dummy(axes, logger)
-            obj.axes = axes;
+        function obj = Dummy(logger)
+            obj.axes = [1 2 3];
             obj.log = logger;
 
-            obj.positions = zeros(1, length(axes));
+            obj.positions = zeros(1, length(obj.axes));
             obj.addr = 4;
 
             obj.log.Info("Instantiated dummy motion controller");
@@ -149,6 +149,15 @@ classdef Dummy < MotionController.AbstractMotionController
 
             obj.log.Debug(sprintf("Dummy::getPosition(%d): %f", axis, obj.positions(axis)));
             pos = obj.positions(axis);
+        end
+
+        function pos = getPositionMultiple(obj, axes)
+            for a = 1:length(axes)
+                assert(ismember(axes(a), obj.axes), "axis must be a valid axis.");
+            end
+
+            obj.log.Debug(sprintf("Dummy::getPositionMultiple()"));
+            pos = obj.positions(axes);
         end
 
         function waitPositionMultiple(obj, axes, positions)

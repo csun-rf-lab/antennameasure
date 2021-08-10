@@ -17,7 +17,7 @@ function [results] = runJob(plan, m, vna, log)
     log.Info("Starting job run");
 
     % m is a MotionController
-    function setPosition(posArray, m, lastPos)
+    function actualPosition = setPosition(posArray, m, lastPos)
 
         if size(posArray,2) == 1
             log.Info(sprintf("Moving to (" + string(posArray) + ")"));
@@ -43,6 +43,8 @@ function [results] = runJob(plan, m, vna, log)
                 m.moveAxisTo(axis, pos);
             end
         end
+
+        actualPosition = m.getPositionMultiple(axes);
     end
 
     % vna is the vna object, which has already been configured for the
@@ -57,7 +59,7 @@ function [results] = runJob(plan, m, vna, log)
 
     % to make matlab happy, we need to declare the empty results array as
     % an empty struct having the same fields as the structs we'll append.
-    results = struct('position', {}, 'measurements', {});
+    results = struct('position', {}, 'actualPosition', {}, 'measurements', {});
 
     % Track the last position we set so we can avoid re-setting axes that
     % haven't changed. This saves time.
@@ -66,8 +68,10 @@ function [results] = runJob(plan, m, vna, log)
     % loop directly, so using `entry` instead.
     for entry = 1:height(plan.steps) % height is new in matlab R2020b
         posArray = plan.steps(entry,:);
-        setPosition(posArray, m, lastPos);
+        actualPosition = setPosition(posArray, m, lastPos);
+
         r.position = posArray;
+        r.actualPosition = actualPosition;
         r.measurements = takeMeasurement(vna);
         results(end+1) = r;
         lastPos = posArray;

@@ -19,7 +19,10 @@ function output = remapMeasurements(input)
         o.freq = freq;
         for r = 1:length(input)
             pos = input(r).position;
+            actualPos = input(r).actualPosition;
+
             o_step.pos = pos;
+            o_step.actualPos = actualPos;
             o_step.S21 = input(r).measurements.S21(f);
             o.steps(r) = o_step;
         end
