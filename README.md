@@ -1,6 +1,5 @@
 # TODO
 
-* Test the method for moving multiple axes at once.
 * Measurement results: Include real positions as separate vector in the results (alongside the ideal ones)
 * VNA view while we're actively running the measurements.
 * JobRunner that gives progress updates and can be stopped.
@@ -14,3 +13,7 @@
 
 * Prologix devices: http://prologix.biz/
 * Camera: https://www.trendnet.com/store/products/surveillance-camera/indoor-outdoor-8mp-4k-uhd-h265-wdr-poe-ir-bullet-network-camera-TV-IP318PI#specifications
+
+# General notes
+
+* Apparently the MI4190 only supports moving one axis at once?! So while there is some code in here for moving all of the axes simultaneously, it's unused.
