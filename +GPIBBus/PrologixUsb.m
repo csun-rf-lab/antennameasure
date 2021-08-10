@@ -129,7 +129,7 @@ classdef PrologixUsb < GPIBBus.AbstractGPIBBus
 
             data = fread(obj.sp, 2); % "#A"
             % TODO: Check that we did in fact receive "#A"
-            ct = fread(obj.sp, 2) % # Number of expected bytes
+            ct = fread(obj.sp, 2); % # Number of expected bytes
             % TODO: Convert ct and check that we get the expected number of
             % bytes in the result.
             data = fread(obj.sp, numDataPoints*2*4, "float32");

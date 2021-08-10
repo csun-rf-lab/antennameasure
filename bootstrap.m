@@ -12,7 +12,7 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 
     MI4190_gpib_addr = 4;
     HP8720_gpib_addr = 16;
-    axes = [1 2 3]; % TODO: NEED TO HANDLE THIS: [1 2 4]
+    axes = [1 2 4];
     comport = "/dev/ttyUSB0";
 
     buslog = Logger();
@@ -22,11 +22,11 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 
     % Set up motion controller
     motlog = Logger();
-    %m = MotionController.MI4190_Prologix(b, MI4190_gpib_addr, axes, motlog);
-    m = MotionController.Dummy(axes, motlog);
+    m = MotionController.MI4190_Prologix(b, MI4190_gpib_addr, axes, motlog);
+    %m = MotionController.Dummy(axes, motlog);
 
     % Set up VNA
     vnalog = Logger();
-    %vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
-    vna = VNA.Dummy(vnalog);
+    vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
+    %vna = VNA.Dummy(vnalog);
 end

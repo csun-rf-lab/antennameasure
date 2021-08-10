@@ -20,7 +20,7 @@ function output = remapMeasurements(input)
         for r = 1:length(input)
             pos = input(r).position;
             o_step.pos = pos;
-            o_step.S21 = input(r).measurements.S(f);
+            o_step.S21 = input(r).measurements.S21(f);
             o.steps(r) = o_step;
         end
 

@@ -3,7 +3,7 @@ function [axes, steps] = planUnidirectionalRun(job)
     % while axes later will be incremented more quickly.
     % TODO: That's a horrible way to explain this. Come up with a better
     % one.
-    precedence = [1 2 3];
+    precedence = [3 2 1];
 
     function [subresult] = calcSteps(remainingAxes)
         thisAxis = remainingAxes(1);

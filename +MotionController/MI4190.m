@@ -223,7 +223,7 @@ classdef MI4190 < MotionController.AbstractMotionController
             end
             % TODO: position validation
 
-            try
+%            try
                 for a = 1:length(axes)
                     axis = axes(a);
                     pos = obj.getPosition(axis);
@@ -237,6 +237,7 @@ classdef MI4190 < MotionController.AbstractMotionController
                     position = positions(a);
                     obj.send(sprintf("CONT1:AXIS(%d):POS:COMM %f\n", obj.realAxis(axis), position));
                     obj.send(sprintf("CONT1:AXIS(%d):MOT:STAR", obj.realAxis(axis)));
+                    pause(0.5);
                 end
 
                 obj.waitPositionMultiple(axes, positions);
@@ -247,10 +248,10 @@ classdef MI4190 < MotionController.AbstractMotionController
                     pos = obj.getPosition(axis);
                     obj.onStateChange(axis, false, false, pos);
                 end
-            catch e
-                disp(e);
-                obj.log.Error(e.message);
-            end
+%            catch e
+%                disp(e);
+%                obj.log.Error(e.message);
+%            end
         end
 
         function moveAxisTo(obj, axis, position)
@@ -262,10 +263,25 @@ classdef MI4190 < MotionController.AbstractMotionController
             % TODO: position validation
 
             try
-                pos = obj.getPosition(axis);
-                obj.onStateChange(axis, true, false, pos);
-                obj.state = MotionController.MotionControllerStateEnum.Moving;
+%                 pos = obj.getPosition(axis);
+%                 obj.onStateChange(axis, true, false, pos);
+                 obj.state = MotionController.MotionControllerStateEnum.Moving;
+%                obj.fread(); % clear out any junk in the incoming queue
                 obj.send(sprintf("CONT1:AXIS(%d):POS:COMM %f\n", obj.realAxis(axis), position));
+
+                %pause(0.1);
+
+                % Verify the commanded position
+                obj.send(sprintf("CONT1:AXIS(%d):POS:COMM?\n", obj.realAxis(axis)));
+                commStr = obj.recv(16);
+                comm = str2double(commStr);
+                if comm ~= position
+                    obj.log.Error("Commanded position doesn't match what we specified!");
+                end
+
+                %pause(0.1);
+
+                % Start motion
                 obj.send(sprintf("CONT1:AXIS(%d):MOT:STAR", obj.realAxis(axis)));
                 obj.waitPosition(axis, position);
                 obj.state = MotionController.MotionControllerStateEnum.Stopped;
@@ -317,9 +333,23 @@ classdef MI4190 < MotionController.AbstractMotionController
             obj.checkAxisNumber(axis); % validate data
 
             try
-                obj.send(sprintf("CONT1:AXIS(%d):POS:CURR?", obj.realAxis(axis)));
-                posChar = obj.recv(100);
-                pos = str2double(convertCharsToStrings(posChar));
+                pos = str2double("nan");
+                attempts = 0;
+                while isnan(pos) && attempts < 5 % Try up to 5 times if we get bad data
+                    if attempts > 0
+                        % If first attempt didn't work, pause for a moment
+                        % before we try again.
+                        pause(0.2);
+                    end
+
+                    obj.send(sprintf("CONT1:AXIS(%d):POS:CURR?", obj.realAxis(axis)));
+                    posChar = obj.recv(100);
+                    pos = str2double(convertCharsToStrings(posChar));
+                    attempts = attempts + 1;
+                    if attempts > 1
+                        obj.log.Warn(sprintf("getPosition(): Reattempt (%d total attempts)", attempts));
+                    end
+                end
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -340,13 +370,13 @@ classdef MI4190 < MotionController.AbstractMotionController
                 obj.checkAxisNumber(axes(a)); % validate data
             end
 
-            thresh = 0.07; % +/- this many degrees
+            thresh = 0.5; % +/- this many degrees (TxPol is as bad as 0.4)
             pos = obj.getPositionMultiple(axes);
             while abs(pos - positions) > thresh
-                f = obj.hasFault(axis);
-
                 for a = 1:length(axes)
-                    obj.onStateChange(axis(a), true, f, pos(a));
+                    axis = axes(a);
+                    f = obj.hasFault(axis);
+                    obj.onStateChange(axis, true, f, pos(a));
                 end
 
                 % Check if user aborted
@@ -361,26 +391,29 @@ classdef MI4190 < MotionController.AbstractMotionController
 % moving?
 
 % TODO: Confirm we're no longer moving
-                for a = 1:length(axes)
-                    obj.onStateChange(axis(a), true, f, pos(a));
-                end
+            for a = 1:length(axes)
+                axis = axes(a);
+                f = obj.hasFault(axis);
+                obj.onStateChange(axis, true, f, pos(a));
+            end
 
 % TODO: include a timeout?
         end
 
         function waitPosition(obj, axis, position)
-            thresh = 0.07; % +/- this many degrees
+            thresh = 0.5; % +/- this many degrees (TxPol is as bad as 0.4)
             pos = obj.getPosition(axis);
             while abs(pos - position) > thresh
                 f = obj.hasFault(axis);
                 obj.onStateChange(axis, true, f, pos);
 
-                % Check if user aborted
-                if obj.state == MotionController.MotionControllerStateEnum.Stopped
-                    break;
-                end
+%                 % Check if user aborted
+%                 if obj.state == MotionController.MotionControllerStateEnum.Stopped
+%                     break;
+%                 end
 
                 pause(0.5);
+
                 pos = obj.getPosition(axis);
             end
 % TODO: Alternatively, check the axis status to see when it has stopped
@@ -496,7 +529,7 @@ obj.onStateChange(axis, false, false, pos);
             obj.checkAxisNumber(axis); % validate data
 
             fault = true;
-            try
+%            try
                 obj.send(sprintf("CONT1:AXIS(%d):STAT?", obj.realAxis(axis)));
                 currStat = obj.recv(100);
 
@@ -507,10 +540,10 @@ obj.onStateChange(axis, false, false, pos);
                 else
                     fault = false;
                 end
-            catch e
-                disp(e);
-                obj.log.Error(e.message);
-            end
+%            catch e
+%                disp(e);
+%                obj.log.Error(e.message);
+%            end
         end
 
         function stopAll(obj)
@@ -541,7 +574,7 @@ obj.onStateChange(axis, false, false, pos);
         end
 
         function checkAxisNumber(obj, axis)
-            assert(ismember(axis, obj.axes), "axis must be a valid axis.");
+            assert(ismember(axis, 1:length(obj.axes)), "axis must be a valid axis.");
         end
 
         function x = realAxis(obj, axis)

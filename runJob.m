@@ -17,7 +17,7 @@ function [results] = runJob(plan, m, vna, log)
     log.Info("Starting job run");
 
     % m is a MotionController
-    function setPosition(posArray, m)
+    function setPosition(posArray, m, lastPos)
 
         if size(posArray,2) == 1
             log.Info(sprintf("Moving to (" + string(posArray) + ")"));
@@ -26,15 +26,23 @@ function [results] = runJob(plan, m, vna, log)
         end
 
         % The fast way: Setting all axes at once
-        m.moveTo(axes, posArray);
+        % Apparently the MI4190 doesn't support this...
+        % TODO: Rewrite moveTo() so the looping happens internally in the
+        % MI4190 driver.
+        %m.moveTo(axes, posArray);
 
         % The slow way: setting the axis positions one at a time
-        % for x = 1:length(axes)
-        %     axis = axes(x);
-        %     pos = posArray(x);
-        %     log.Debug(sprintf("Moving axis %d to %d", axis, pos));
-        %     m.moveAxisTo(axis, pos);
-        % end
+        for x = 1:length(axes)
+            axis = axes(x);
+            pos = posArray(x);
+
+            if pos == lastPos(x)
+                log.Debug(sprintf("Leaving axis %d at %d", axis, pos));
+            else
+                log.Debug(sprintf("Moving axis %d to %d", axis, pos));
+                m.moveAxisTo(axis, pos);
+            end
+        end
     end
 
     % vna is the vna object, which has already been configured for the
@@ -50,14 +58,19 @@ function [results] = runJob(plan, m, vna, log)
     % to make matlab happy, we need to declare the empty results array as
     % an empty struct having the same fields as the structs we'll append.
     results = struct('position', {}, 'measurements', {});
+
+    % Track the last position we set so we can avoid re-setting axes that
+    % haven't changed. This saves time.
+    lastPos = 9999999999 * ones(1, length(axes));
     % I don't know how to get the individual sets of positions out of the
     % loop directly, so using `entry` instead.
     for entry = 1:height(plan.steps) % height is new in matlab R2020b
         posArray = plan.steps(entry,:);
-        setPosition(posArray, m);
+        setPosition(posArray, m, lastPos);
         r.position = posArray;
         r.measurements = takeMeasurement(vna);
         results(end+1) = r;
+        lastPos = posArray;
     end
 
     % Clean up things with the VNA now that we're done

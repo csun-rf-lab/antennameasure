@@ -89,7 +89,7 @@ classdef Dummy < VNA.AbstractVNA
             startFreq = obj.start;
             stopFreq = obj.stop;
             numPoints = obj.numPts;
-
+%%%% TODO: results.S --> results.S21
             % Load some data to return
             load("results.mat", "results");
         end % measure()

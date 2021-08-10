@@ -33,8 +33,8 @@ classdef planBidirectionalRunTest < matlab.unittest.TestCase
             job.axes(2).stop = 90;
             job.axes(2).increment = 15;
             job.axes(3).enable = "Off";
-            expectedAxes = [1 2];
-            expectedPositions = [0 45; 0 60; 0 75; 0 90; 10 90; 10 75; 10 60; 10 45; 20 45; 20 60; 20 75; 20 90];
+            expectedAxes = [2 1];
+            expectedPositions = [45 0; 45 10; 45 20; 60 20; 60 10; 60 0; 75 0; 75 10; 75 20; 90 20; 90 10; 90 0];
             [actualAxes, actualPositions] = planBidirectionalRun(job);
             testCase.verifyEqual(actualAxes, expectedAxes)
             testCase.verifyEqual(actualPositions, expectedPositions)
@@ -52,8 +52,8 @@ classdef planBidirectionalRunTest < matlab.unittest.TestCase
             job.axes(2).stop = 90;
             job.axes(2).increment = 15;
             job.axes(3).enable = "Off";
-            expectedAxes = [1 2];
-            expectedPositions = [90 45; 90 60; 90 75; 90 90];
+            expectedAxes = [2 1];
+            expectedPositions = [45 90; 60 90; 75 90; 90 90];
             [actualAxes, actualPositions] = planBidirectionalRun(job);
             testCase.verifyEqual(actualAxes, expectedAxes)
             testCase.verifyEqual(actualPositions, expectedPositions)
@@ -74,8 +74,8 @@ classdef planBidirectionalRunTest < matlab.unittest.TestCase
             job.axes(3).start = 10;
             job.axes(3).stop = 20;
             job.axes(3).increment = 10;
-            expectedAxes = [1 2 3];
-            expectedPositions = [0 60 10; 0 60 20; 0 70 20; 0 70 10; 10 70 10; 10 70 20; 10 60 20; 10 60 10];
+            expectedAxes = [3 2 1];
+            expectedPositions = [10 60 0; 10 60 10; 10 70 10; 10 70 0; 20 70 0; 20 70 10; 20 60 10; 20 60 0];
             [actualAxes, actualPositions] = planBidirectionalRun(job);
             testCase.verifyEqual(actualAxes, expectedAxes)
             testCase.verifyEqual(actualPositions, expectedPositions)

@@ -33,18 +33,19 @@ span = vna.getSpan()
 
 axis1pos = m.getPosition(1)
 axis2pos = m.getPosition(2)
-axis4pos = m.getPosition(4)
+axis3pos = m.getPosition(3)
 
 %% For the grand finale... can we run a job?
 
 job.axes = [1];
-job.positions = (0 : 10 : 90)';
+job.steps = (0 : 10 : 40)';
+
 %
 %job.axes = [1 2];
-%job.positions = [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
+%job.steps = [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
 % 
 %job.axes = [1 2 4];
-%job.positions = [0 60 10; 0 60 20; 0 70 10; 0 70 20; 10 60 10; 10 60 20; 10 70 10; 10 70 20];
+%job.steps = [0 60 10; 0 60 20; 0 70 10; 0 70 20; 10 60 10; 10 60 20; 10 70 10; 10 70 20];
 
 joblog = Logger();
 results = runJob(job, m, vna, joblog)

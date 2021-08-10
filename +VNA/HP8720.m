@@ -171,7 +171,7 @@ classdef HP8720 < VNA.AbstractVNA
             numPoints = obj.measurementParams.numPoints;
 
             timeout = obj.getTimeout();
-            try
+%            try
                 % Compute the expected frequency points from the VNA. The 8720B has a 100
                 % KHz frequency resolution, so round to this.
                 freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPoints-1):stopFreq)/1e5);
@@ -205,7 +205,7 @@ classdef HP8720 < VNA.AbstractVNA
                     dataNums = textscan(dataTran,'%f%f','Delimiter',',');
                     S21 = dataNums{1} + j*dataNums{2};
                 else % FORM5
-                    dataTran = obj.fread_special(numPoints);
+                    dataTran = obj.fread_FORM5(numPoints);
                     S21 = dataTran(1:2:end) + j*dataTran(2:2:end);
                 end
 
@@ -223,10 +223,10 @@ classdef HP8720 < VNA.AbstractVNA
                 results.REFV = obj.measurementParams.REFV;
                 results.freq = freq;
                 results.S21 = S21;
-            catch e
-                disp(e);
-                obj.log.Error(e.message);
-            end % try/catch
+%             catch e
+%                 disp(e);
+%                 obj.log.Error(e.message);
+%             end % try/catch
 
             obj.setTimeout(timeout);
         end % measure()

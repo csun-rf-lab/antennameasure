@@ -46,6 +46,15 @@ classdef Logger < handle % By extending "handle" we get normal class behavior
             obj.append(m);
         end
 
+        function Warn(obj, msg)
+            m = strcat(datestr(now), " :: WARN  :: ", msg);
+            if obj.echo
+                fprintf(m + "\n");
+            end
+
+            obj.append(m);
+        end
+
         function Error(obj, msg)
             m = strcat(datestr(now), " :: ERROR :: ", msg);
             if obj.echo

@@ -56,7 +56,7 @@ classdef HP8720_Prologix < VNA.HP8720
         end
 
         function data = fread_FORM5(obj, numDataPoints)
-            data = obj.gpib.fread_special(numDataPoints);
+            data = obj.gpib.fread_FORM5(numDataPoints);
             obj.log.Debug(sprintf("fread(): %s", data));
         end
 
