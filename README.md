@@ -1,3 +1,7 @@
+# Hello!
+
+This repository is a work in progress. It is not ready for general use. This notice will be removed when it is ready.
+
 # TODO
 
 * Measurement results: check actualPos value in final measurement results
