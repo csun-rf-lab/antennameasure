@@ -25,5 +25,6 @@ function [measurement] = extractMeasurement1DFreq(results, pos)
         end
 
         measurement.S21(f) = steps(p).S21;
+        measurement.actualPosition(f) = steps(p).actualPos;
     end
 end

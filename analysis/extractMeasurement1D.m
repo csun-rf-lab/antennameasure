@@ -17,5 +17,6 @@ function [measurement] = extractMeasurement1D(results, freq)
 
     % Specific data points
     measurement.position = [steps.pos];
+    measurement.actualPosition = [steps.actualPos];
     measurement.S21 = [steps.S21];
 end
