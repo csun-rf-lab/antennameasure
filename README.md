@@ -6,7 +6,6 @@ This repository is a work in progress. It is not ready for general use. This not
 
 * Measurement results: check actualPos value in final measurement results
 * Include axis names in measurement results
-* JobRunner that gives progress updates and can be stopped.
 * Try a simpler approach for the MotionController event handling
 * VNA view while we're actively running the measurements.
 * Cache axis names so it's not always a slow lookup
