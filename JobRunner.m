@@ -5,8 +5,9 @@ classdef JobRunner < handle
     % runJob() and passing the plan as the only parameter.
     
     properties
-        log % Logger
-        m   % MotionController
+        allAxisNames % Vector of the axis names
+        log          % Logger
+        m            % MotionController
 
         % vna is the vna object, which has already been configured for the
         % appropriate measurement.
@@ -23,7 +24,8 @@ classdef JobRunner < handle
     end
     
     methods
-        function obj = JobRunner(m, vna, log)
+        function obj = JobRunner(allAxisNames, m, vna, log)
+           obj.allAxisNames = allAxisNames;
            obj.m = m;
            obj.vna = vna;
            obj.log = log;
@@ -75,7 +77,9 @@ classdef JobRunner < handle
             obj.vna.afterMeasurements();
 
             % Remap the data into a useful format
-            obj.results = remapMeasurements(results);
+            obj.results.meta.version = 1;
+            obj.results.meta.axisNames = obj.allAxisNames(axes);
+            obj.results.data = remapMeasurements(results);
 
             if (obj.shouldStop)
                 obj.onStateChange(false, percentComplete, false);

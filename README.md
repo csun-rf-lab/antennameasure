@@ -4,7 +4,6 @@ This repository is a work in progress. It is not ready for general use. This not
 
 # TODO
 
-* Include axis names in measurement results
 * Tests for extractMeasurement... functions
 * Try a simpler approach for the MotionController event handling
 * VNA view while we're actively running the measurements.
