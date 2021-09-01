@@ -5,6 +5,7 @@ This repository is a work in progress. It is not ready for general use. This not
 # TODO
 
 * Check TODO in remapMeasurements.m
+* Add support for specifying start/stop freq instead of center/span
 * Tests for extractMeasurement... functions
 * Try a simpler approach for the MotionController event handling
 * VNA view while we're actively running the measurements.
