@@ -11,6 +11,9 @@ classdef JobRunner < handle
         % vna is the vna object, which has already been configured for the
         % appropriate measurement.
         vna
+
+        % Regular variables
+        shouldStop % Set by stop() to bail out of a job run
     end
 
     events
@@ -25,6 +28,7 @@ classdef JobRunner < handle
         end
 
         function results = runJob(obj, plan)
+            obj.shouldStop = false;
             obj.onStateChange(true, 0, false);
 
             % Example: [1 2]
@@ -43,9 +47,14 @@ classdef JobRunner < handle
             % Track the last position we set so we can avoid re-setting axes that
             % haven't changed. This saves time.
             lastPos = 9999999999 * ones(1, length(axes));
+
             % I don't know how to get the individual sets of positions out of the
             % loop directly, so using `entry` instead.
             for entry = 1:height(plan.steps) % height is new in matlab R2020b
+                if (obj.shouldStop)
+                    break;
+                end
+
                 posArray = plan.steps(entry,:);
                 actualPosition = obj.setPosition(axes, posArray, lastPos);
 
@@ -65,8 +74,17 @@ classdef JobRunner < handle
             % Remap the data into a useful format
             results = remapMeasurements(results);
 
-            obj.onStateChange(false, 100, false);
-            obj.log.Info("Finished job run");
+            if (obj.shouldStop)
+                obj.onStateChange(false, percentComplete, false);
+                obj.log.Info("Stopped job at user request");
+            else
+                obj.onStateChange(false, 100, false);
+                obj.log.Info("Finished job run");
+            end
+        end
+
+        function stop(obj)
+            obj.shouldStop = true;
         end
     end % end methods
 
