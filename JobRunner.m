@@ -13,7 +13,9 @@ classdef JobRunner < handle
         vna
 
         % Regular variables
-        shouldStop % Set by stop() to bail out of a job run
+        shouldStop = false % Set by stop() to bail out of a job run
+        success = false
+        results
     end
 
     events
@@ -29,6 +31,7 @@ classdef JobRunner < handle
 
         function results = runJob(obj, plan)
             obj.shouldStop = false;
+            obj.success = false;
             obj.onStateChange(true, 0, false);
 
             % Example: [1 2]
@@ -72,14 +75,28 @@ classdef JobRunner < handle
             obj.vna.afterMeasurements();
 
             % Remap the data into a useful format
-            results = remapMeasurements(results);
+            obj.results = remapMeasurements(results);
 
             if (obj.shouldStop)
                 obj.onStateChange(false, percentComplete, false);
                 obj.log.Info("Stopped job at user request");
             else
                 obj.onStateChange(false, 100, false);
+                obj.success = true;
                 obj.log.Info("Finished job run");
+            end
+        end
+
+        function success = finishedSuccessfully(obj)
+            success = obj.success;
+        end
+
+        function saveResults(obj, filename)
+            if (obj.success)
+                results = obj.results;
+                save(filename, "results");
+            else
+                error("No results to save because operation did not complete successfully.");
             end
         end
 
