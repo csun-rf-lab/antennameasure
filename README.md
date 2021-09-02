@@ -2,10 +2,18 @@
 
 This repository is a work in progress. It is not ready for general use. This notice will be removed when it is ready.
 
+# Requirements
+
+* MATLAB R2021a
+
+# TO TEST
+
+* Verify that start/stop freqs are set properly on the VNA when a job runs. Check that we're recording the actual value, not the one the user requested.
+* Replace results.mat (direct output of the VNA measurements) so that the Dummy processor works again.
+
 # TODO
 
 * Check TODO in remapMeasurements.m
-* Add support for specifying start/stop freq instead of center/span
 * Tests for extractMeasurement... functions
 * Try a simpler approach for the MotionController event handling
 * VNA view while we're actively running the measurements.

@@ -3,8 +3,8 @@ function [plan] = planJobRun(job)
 %to take.
 
     % Measurement details
-    plan.freqCenter = job.freqCenter;
-    plan.span = job.span;
+    plan.startFreq = job.startFreq;
+    plan.stopFreq = job.stopFreq;
     plan.numPts = job.numPts;
 
     % Now determine at what points (and in what order) we want to take the

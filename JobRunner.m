@@ -42,8 +42,8 @@ classdef JobRunner < handle
             % plan.steps example:
             % [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
 
-            % Prepare the VNA to take all of our measurements
-            obj.vna.beforeMeasurements();
+            % Prepare the VNA (set params and record them)
+            obj.prepVNA(plan);
 
             % to make matlab happy, we need to declare the empty results array as
             % an empty struct having the same fields as the structs we'll append.
@@ -79,6 +79,11 @@ classdef JobRunner < handle
             % Remap the data into a useful format
             obj.results.meta.version = 1;
             obj.results.meta.axisNames = obj.allAxisNames(axes);
+            obj.results.meta.startFreq = results.startFreq;
+            obj.results.meta.stopFreq = results.stopFreq;
+            obj.results.meta.SCAL = results.SCAL;
+            obj.results.meta.REFP = results.REFP;
+            ob.results.meta.REFV = results.REFV;
             obj.results.data = remapMeasurements(results);
 
             if (obj.shouldStop)
@@ -142,6 +147,16 @@ classdef JobRunner < handle
         function meas = takeMeasurement(obj)
             obj.log.Info(sprintf("Taking measurements"));
             meas = obj.vna.measure();
+        end
+
+        function prepVNA(obj, plan)
+            % Set measurement params
+            obj.vna.setStartFreq(plan.startFreq);
+            obj.vna.setStopFreq(plan.stopFreq);
+            obj.vna.setNumPts(plan.numPts);
+
+            % Record the params and prep the VNA for measurements
+            obj.vna.beforeMeasurements();
         end
 
         function onStateChange(obj, running, percentComplete, fault)
