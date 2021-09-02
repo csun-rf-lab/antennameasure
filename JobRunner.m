@@ -83,7 +83,7 @@ classdef JobRunner < handle
             obj.results.meta.stopFreq = results.stopFreq;
             obj.results.meta.SCAL = results.SCAL;
             obj.results.meta.REFP = results.REFP;
-            ob.results.meta.REFV = results.REFV;
+            obj.results.meta.REFV = results.REFV;
             obj.results.data = remapMeasurements(results);
 
             if (obj.shouldStop)

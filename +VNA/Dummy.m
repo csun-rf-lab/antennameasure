@@ -92,6 +92,10 @@ classdef Dummy < VNA.AbstractVNA
 
             % Load some data to return
             load("results.mat", "results");
+
+            obj.onMeasurement(results);
+
+            % results is returned
         end % measure()
     end % methods
 end

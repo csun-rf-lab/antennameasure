@@ -3,6 +3,7 @@ classdef AbstractVNA< handle
 
     properties (SetAccess = protected, GetAccess = protected)
         connected = false % bool: connected to VNA?
+        ec   % Container for emitting events
         log  % Logger object
         onConnectStateChangeCb
     end
@@ -52,6 +53,14 @@ classdef AbstractVNA< handle
     end
 
     methods
+        function obj = AbstractVNA()
+            obj.ec = Event.VNAMeasurementEventContainer;
+        end
+
+        function ec = getEventContainer(obj)
+            ec = obj.ec;
+        end
+
          function conn = isConnected(obj)
              conn = obj.connected;
          end
@@ -66,6 +75,16 @@ classdef AbstractVNA< handle
     end
 
     methods (Access = protected)
+        function onMeasurement(obj, results)
+            % onMeasurement called by extending class when a measurement
+            % occurs. This method collects the relevant information and
+            % calls the measurement callback.
+
+            % I couldn't figure out a sane way to emit events from here,
+            % so we go through this other class:
+            obj.ec.onMeasurement(results);
+        end
+
         function setConnectedState(obj, state)
             obj.connected = state;
             if isa(obj.onConnectStateChangeCb, 'function_handle')
