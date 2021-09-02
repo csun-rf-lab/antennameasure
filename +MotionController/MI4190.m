@@ -17,6 +17,7 @@ classdef MI4190 < MotionController.AbstractMotionController
         % axes, in superclass
         % log,  in superclass
         state % State
+        axisNames % Cache names so we're not looking them up all the time
     end
 
     methods
@@ -24,10 +25,17 @@ classdef MI4190 < MotionController.AbstractMotionController
             %MI4190 Construct an instance of this class
             %   axes is a vector of all axes identifiers.
 
-             assert(isvector(axes), "axes must be a vector.");
+            assert(isvector(axes), "axes must be a vector.");
 
             obj.axes = axes;
             obj.log = logger;
+
+            % This makes the assumption that the axis numbers are
+            % sequential, which should be a fair assumption given that
+            % they're tied fairly intimately with the UI.
+            for x = 1:length(axes)
+                obj.axisNames(x) = "";
+            end
         end
 
         function check(obj)
@@ -85,17 +93,23 @@ classdef MI4190 < MotionController.AbstractMotionController
 
             obj.checkAxisNumber(axis); % validate data
 
-            if obj.connected
-                try
-                    obj.send(sprintf("CONT1:AXIS(%d):NAME?", obj.realAxis(axis)));
-                    name = obj.recv(32);
-                catch e
-                    disp(e);
-                    obj.log.Error(e.message);
+            if isstring(obj.axisNames(axis)) && strlength(obj.axisNames(axis)) > 0
+                name = obj.axisNames(axis);
+            else
+                if obj.connected
+                    try
+                        obj.send(sprintf("CONT1:AXIS(%d):NAME?", obj.realAxis(axis)));
+                        name = obj.recv(32);
+
+                        obj.axisNames(axis) = name;
+                    catch e
+                        disp(e);
+                        obj.log.Error(e.message);
+                        name = "Unknown";
+                    end
+                else
                     name = "Unknown";
                 end
-            else
-                name = "Unknown";
             end
         end
 

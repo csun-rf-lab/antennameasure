@@ -6,18 +6,19 @@ This repository is a work in progress. It is not ready for general use. This not
 
 * MATLAB R2021a
 
-# TO TEST
+# TO TEST/DISCUSS
 
+* Test that axis names are cached properly now in the HP8720 controller
 * Verify that start/stop freqs are set properly on the VNA when a job runs. Check that we're recording the actual value, not the one the user requested.
 * Replace results.mat (direct output of the VNA measurements) so that the Dummy processor works again.
+* Discuss TODO in remapMeasurements.m
 
 # TODO
 
-* Check TODO in remapMeasurements.m
 * Tests for extractMeasurement... functions
 * Add some controls to the VNA view
-* Cache axis names so it's not always a slow lookup
 * Show the measurements as they happen (defaults for single axis/freq, dropdowns for more complex jobs)
+* Add the ability to clear the cached axis names in the motion controller
 * Originally the MI4190 and HP8720 classes were built with _Prologix extensions and it made sense at the time. However, since then things have changed and the separate classes no longer make sense. To clean up, the _Prologix classes should be integrated back into the core classes.
 * There is still a nasty bug related to the log in MotionControllerApp. Try opening and closing it a few times in a row and you'll see what I mean.
 
