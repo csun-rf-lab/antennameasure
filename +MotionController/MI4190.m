@@ -320,7 +320,8 @@ classdef MI4190 < MotionController.AbstractMotionController
                 obj.waitPosition(axis, position);
                 obj.state = MotionController.MotionControllerStateEnum.Stopped;
                 pos = obj.getPosition(axis);
-                obj.onStateChange(axis, false, false, pos);
+                f = obj.hasFault(axis);
+                obj.onStateChange(axis, false, f, pos);
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -454,7 +455,7 @@ classdef MI4190 < MotionController.AbstractMotionController
 % moving?
 
 % TODO: Confirm we're no longer moving
-obj.onStateChange(axis, false, false, pos);
+obj.onStateChange(axis, false, f, pos);
 
 % TODO: include a timeout?
         end
