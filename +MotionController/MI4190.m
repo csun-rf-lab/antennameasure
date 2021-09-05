@@ -29,13 +29,7 @@ classdef MI4190 < MotionController.AbstractMotionController
 
             obj.axes = axes;
             obj.log = logger;
-
-            % This makes the assumption that the axis numbers are
-            % sequential, which should be a fair assumption given that
-            % they're tied fairly intimately with the UI.
-            for x = 1:length(axes)
-                obj.axisNames(x) = "";
-            end
+            obj.axisNames = repelem("", length(axes));
         end
 
         function check(obj)

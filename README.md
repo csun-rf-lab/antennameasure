@@ -8,7 +8,6 @@ This repository is a work in progress. It is not ready for general use. This not
 
 # TO TEST/DISCUSS
 
-* Test that axis names are cached properly now in the HP8720 controller
 * Verify that start/stop freqs are set properly on the VNA when a job runs. Check that we're recording the actual value, not the one the user requested.
 * Replace results.mat (direct output of the VNA measurements) so that the Dummy processor works again.
 * Discuss TODO in remapMeasurements.m
