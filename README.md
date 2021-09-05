@@ -13,7 +13,6 @@ This repository is a work in progress. It is not ready for general use. This not
 # TODO
 
 * Ability to set axis velocities from job config and from motion controller app
-* When jogging (like +5), app stops listening long before the move is complete if the axis velocity is very slow
 * Tests for extractMeasurement... functions
 * Add some controls to the VNA view
 * Show the measurements as they happen (defaults for single axis/freq, dropdowns for more complex jobs)
