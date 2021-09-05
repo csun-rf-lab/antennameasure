@@ -228,6 +228,12 @@ classdef HP8720 < VNA.AbstractVNA
 %                 obj.log.Error(e.message);
 %             end % try/catch
 
+            try
+                obj.onMeasurement(results); % Notify event handlers
+            catch e
+                disp(e);
+            end
+
             obj.setTimeout(timeout);
         end % measure()
     end % methods

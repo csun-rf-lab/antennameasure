@@ -8,10 +8,11 @@ classdef JobRunner < handle
         allAxisNames % Vector of the axis names
         log          % Logger
         m            % MotionController
+        vna          % VNA
 
-        % vna is the vna object, which has already been configured for the
-        % appropriate measurement.
-        vna
+        % Job run details
+        startFreq
+        stopFreq
 
         % Regular variables
         shouldStop = false % Set by stop() to bail out of a job run
@@ -79,11 +80,11 @@ classdef JobRunner < handle
             % Remap the data into a useful format
             obj.results.meta.version = 1;
             obj.results.meta.axisNames = obj.allAxisNames(axes);
-            obj.results.meta.startFreq = results.startFreq;
-            obj.results.meta.stopFreq = results.stopFreq;
-            obj.results.meta.SCAL = results.SCAL;
-            obj.results.meta.REFP = results.REFP;
-            obj.results.meta.REFV = results.REFV;
+            obj.results.meta.startFreq = obj.startFreq;
+            obj.results.meta.stopFreq = obj.stopFreq;
+%            obj.results.meta.SCAL = results.SCAL;
+%            obj.results.meta.REFP = results.REFP;
+%            obj.results.meta.REFV = results.REFV;
             obj.results.data = remapMeasurements(results);
 
             if (obj.shouldStop)
@@ -154,6 +155,9 @@ classdef JobRunner < handle
             obj.vna.setStartFreq(plan.startFreq);
             obj.vna.setStopFreq(plan.stopFreq);
             obj.vna.setNumPts(plan.numPts);
+
+            obj.startFreq = obj.vna.getStartFreq();
+            obj.stopFreq = obj.vna.getStopFreq();
 
             % Record the params and prep the VNA for measurements
             obj.vna.beforeMeasurements();
