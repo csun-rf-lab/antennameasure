@@ -43,6 +43,9 @@ classdef JobRunner < handle
             % plan.steps example:
             % [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
 
+            % Prepare the motino controller (set slew rate, etc.)
+            obj.prepMotionController(plan);
+
             % Prepare the VNA (set params and record them)
             obj.prepVNA(plan);
 
@@ -148,6 +151,13 @@ classdef JobRunner < handle
         function meas = takeMeasurement(obj)
             obj.log.Info(sprintf("Taking measurements"));
             meas = obj.vna.measure();
+        end
+
+        function prepMotionController(obj, plan)
+            actual1 = obj.m.setSlewVelocity(1, 4);
+            actual2 = obj.m.setSlewVelocity(2, 4);
+            actual3 = obj.m.setSlewVelocity(3, 4);
+            % fprintf("\n\nActual slew velocities: %f %f %f\n\n", actual1, actual2, actual3);
         end
 
         function prepVNA(obj, plan)

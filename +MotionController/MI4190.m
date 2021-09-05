@@ -221,6 +221,32 @@ classdef MI4190 < MotionController.AbstractMotionController
             end
         end
 
+        function slew = getSlewVelocity(obj, axis)
+            obj.checkAxisNumber(axis); % validate data
+
+            try
+                obj.send(sprintf("CONT1:AXIS(%d):VEL:SLEW?", obj.realAxis(axis)));
+                slewStr = obj.recv(16);
+                slew = str2double(slewStr);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function actual = setSlewVelocity(obj, axis, slew)
+            obj.checkAxisNumber(axis); % validate data
+
+            try
+                obj.send(sprintf("CONT1:AXIS(%d):VEL:SLEW %f", obj.realAxis(axis), slew));
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+
+            actual = obj.getSlewVelocity(axis);
+        end
+
         function moveTo(obj, axes, positions)
             %moveTo Move a set of axes to specific positions.
             %   Axes is a numerical vector, and positions a vector
