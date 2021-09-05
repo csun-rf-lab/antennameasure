@@ -8,7 +8,6 @@ This repository is a work in progress. It is not ready for general use. This not
 
 # TO TEST/DISCUSS
 
-* Replace results.mat (direct output of the VNA measurements) so that the Dummy processor works again.
 * Discuss TODO in remapMeasurements.m
 
 # TODO
