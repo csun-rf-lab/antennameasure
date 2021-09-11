@@ -11,8 +11,11 @@ classdef JobRunner < handle
         vna          % VNA
 
         % Job run details
+        plan
+        % Actual values from VNA:
         startFreq
         stopFreq
+        numPts
 
         % Regular variables
         shouldStop = false % Set by stop() to bail out of a job run
@@ -20,6 +23,9 @@ classdef JobRunner < handle
         axes
         measurements  % temporary data as the job runs
         results       % actual data to save
+
+        % Live view
+        liveView_Freq
     end
 
     events
@@ -35,10 +41,8 @@ classdef JobRunner < handle
            obj.log = log;
         end
 
-        function results = runJob(obj, plan)
-            obj.shouldStop = false;
-            obj.success = false;
-            obj.onStateChange(true, 0, false);
+        function prepJob(obj, plan)
+            obj.plan = plan;
 
             % Example: [1 2]
             obj.axes = plan.axes;
@@ -46,11 +50,22 @@ classdef JobRunner < handle
             % plan.steps example:
             % [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
 
-            % Prepare the motino controller (set slew rate, etc.)
+            % Prepare the motion controller (set slew rate, etc.)
             obj.prepMotionController(plan);
 
             % Prepare the VNA (set params and record them)
             obj.prepVNA(plan);
+
+            % Prepare metadata for live view
+            obj.prepLiveView();
+        end
+
+        function results = runJob(obj)
+            obj.shouldStop = false;
+            obj.success = false;
+            obj.onStateChange(true, 0, false);
+
+            plan = obj.plan;
 
             % to make matlab happy, we need to declare the empty results array as
             % an empty struct having the same fields as the structs we'll append.
@@ -115,18 +130,47 @@ classdef JobRunner < handle
         function stop(obj)
             obj.shouldStop = true;
         end
+
+        function freq = getLiveViewFrequenciesAvailable(obj)
+            % For simplicity, right now we assume the frequencies available
+            % from the HP8720 driver. If other drivers are added, this
+            % should be reworked to determine the available frequencies
+            % from the selected driver.
+            % Additionally, this should probably be determined after the
+            % VNA is prepped, so we can verify that the start/stop and
+            % numPts are acceptable to the VNA.
+
+            startFreq = obj.startFreq;
+            stopFreq = obj.stopFreq;
+            numPts = obj.numPts;
+            freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPts-1):stopFreq)/1e5);
+        end
+
+        function freq = getLiveViewFrequency(obj)
+            freq = obj.liveView_Freq;
+        end
+
+        function setLiveViewFrequency(obj, freq)
+            obj.liveView_Freq = freq;
+            obj.onMeasurementsChange();
+        end
     end % end methods
 
     methods (Access = protected)
         % Refresh the job-in-progress measurements display
         function onMeasurementsChange(obj)
             r = obj.mapResults();
-            data = extractMeasurement1D(r, 3e9);
+            data = extractMeasurement1D(r, obj.liveView_Freq);
 
             positions = data.actualPosition;
             S21 = data.S21;
 
             notify(obj, "MeasurementsChange", Event.JobRunnerMeasurementsChangeEvent(positions, S21));
+        end
+
+        function prepLiveView(obj)
+            freqs = obj.getLiveViewFrequenciesAvailable();
+            obj.liveView_Freq = freqs(ceil(end/2));
         end
 
         function actualPosition = setPosition(obj, axes, posArray, lastPos)
@@ -176,8 +220,10 @@ classdef JobRunner < handle
             obj.vna.setStopFreq(plan.stopFreq);
             obj.vna.setNumPts(plan.numPts);
 
+            % Make sure we represent things correctly in the result
             obj.startFreq = obj.vna.getStartFreq();
             obj.stopFreq = obj.vna.getStopFreq();
+            obj.numPts = obj.vna.getNumPts();
 
             % Record the params and prep the VNA for measurements
             obj.vna.beforeMeasurements();
