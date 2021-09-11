@@ -6,16 +6,13 @@ This repository is a work in progress. It is not ready for general use. This not
 
 * MATLAB R2021a
 
-# TO TEST/DISCUSS
-
-* Discuss TODO in remapMeasurements.m
-
 # TODO
 
+* Include all axis positions in result data
 * Ability to set axis velocities from job config and from motion controller app
 * Tests for extractMeasurement... functions
 * Add some controls to the VNA view
-* Show the measurements as they happen (defaults for single axis/freq, dropdowns for more complex jobs)
+* Add support for 3 axes in measurements live view
 * Add the ability to clear the cached axis names in the motion controller
 * Originally the MI4190 and HP8720 classes were built with _Prologix extensions and it made sense at the time. However, since then things have changed and the separate classes no longer make sense. To clean up, the _Prologix classes should be integrated back into the core classes.
 * There is still a nasty bug related to the log in MotionControllerApp. Try opening and closing it a few times in a row and you'll see what I mean.
