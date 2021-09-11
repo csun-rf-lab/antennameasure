@@ -20,6 +20,7 @@ classdef JobRunner < handle
         % Regular variables
         shouldStop = false % Set by stop() to bail out of a job run
         success = false
+        actualPosAxes
         axes
         measurements  % temporary data as the job runs
         results       % actual data to save
@@ -48,6 +49,8 @@ classdef JobRunner < handle
 
             % Example: [1 2]
             obj.axes = plan.axes;
+            % Specify all axes for getting the actual position
+            obj.actualPosAxes = [1 2 3]; % This shouldn't really be hardcoded...
 
             % plan.steps example:
             % [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
@@ -239,8 +242,6 @@ classdef JobRunner < handle
 
             % The fast way: Setting all axes at once
             % Apparently the MI4190 doesn't support this...
-            % TODO: Rewrite moveTo() so the looping happens internally in the
-            % MI4190 driver.
             %obj.m.moveTo(axes, posArray);
 
             % The slow way: setting the axis positions one at a time
@@ -256,7 +257,7 @@ classdef JobRunner < handle
                 end
             end
 
-            actualPosition = obj.m.getPositionMultiple(axes);
+            actualPosition = obj.m.getPositionMultiple(obj.actualPosAxes);
         end % setPosition()
 
         function meas = takeMeasurement(obj)
@@ -289,6 +290,7 @@ classdef JobRunner < handle
         function results = mapResults(obj)
             results.meta.version = 1;
             results.meta.axisNames = obj.allAxisNames(obj.axes);
+            results.meta.actualPositionAxisNames = obj.allAxisNames(obj.actualPosAxes);
             results.meta.startFreq = obj.startFreq;
             results.meta.stopFreq = obj.stopFreq;
 %            results.meta.SCAL = results.SCAL;

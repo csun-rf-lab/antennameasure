@@ -32,7 +32,7 @@ function [measurement] = extractMeasurementSlice(results, freq, axisIdx, pos)
             ct = ct + 1;
             % "x" and "y" values for the measurement
             measurement.position(ct) = step.pos(otherAxis(axisIdx));
-            measurement.actualPosition(ct) = step.actualPos(otherAxis(axisIdx));
+            measurement.actualPosition(ct, :) = step.actualPos;
             measurement.S21(ct) = step.S21;
         end
     end

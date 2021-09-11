@@ -8,7 +8,6 @@ This repository is a work in progress. It is not ready for general use. This not
 
 # TODO
 
-* Include all axis positions in result data
 * Ability to set axis velocities from job config and from motion controller app
 * Tests for extractMeasurement... functions
 * Add some controls to the VNA view

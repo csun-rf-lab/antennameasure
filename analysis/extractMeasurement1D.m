@@ -15,9 +15,14 @@ function [measurement] = extractMeasurement1D(results, freq)
     % Frequency selected by the user
     measurement.freq = freq;
 
+    % Intermediate stuff
+    actualAxesCt = length(results.data(1).steps(1).actualPos);
+    stepCt = length(steps);
+    actualPositions = [steps.actualPos];
+
     % Specific data points
     measurement.axisNames = results.meta.axisNames;
     measurement.position = [steps.pos];
-    measurement.actualPosition = [steps.actualPos];
+    measurement.actualPosition = reshape(actualPositions, [actualAxesCt, stepCt])';
     measurement.S21 = [steps.S21];
 end
