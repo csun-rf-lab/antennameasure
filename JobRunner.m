@@ -26,6 +26,8 @@ classdef JobRunner < handle
 
         % Live view
         liveView_Freq
+        liveView_Axis
+        liveView_SlicePosition
     end
 
     events
@@ -96,6 +98,7 @@ classdef JobRunner < handle
 
                 obj.measurements = results;
                 obj.onMeasurementsChange();
+                drawnow;
             end
 
             % Clean up things with the VNA now that we're done
@@ -154,23 +157,77 @@ classdef JobRunner < handle
             obj.liveView_Freq = freq;
             obj.onMeasurementsChange();
         end
+
+        function axis = getLiveViewAxis(obj)
+            axis = obj.liveView_Axis;
+        end
+
+        function setLiveViewAxis(obj, axis)
+            obj.liveView_Axis = axis;
+
+            % When changing axis, pick a default slice
+            slices = obj.getLiveViewSlicesAvailable();
+            obj.setLiveViewSlicePosition(slices(ceil(end/2)));
+        end
+
+        function slices = getLiveViewSlicesAvailable(obj)
+            axisIdx = find(obj.axes == obj.liveView_Axis);
+            slices = unique(obj.plan.steps(:, axisIdx));
+        end
+
+        function slice = getLiveViewSlicePosition(obj)
+            slice = obj.liveView_SlicePosition;
+        end
+
+        function setLiveViewSlicePosition(obj, slice)
+            obj.liveView_SlicePosition = slice;
+        end
     end % end methods
 
     methods (Access = protected)
         % Refresh the job-in-progress measurements display
         function onMeasurementsChange(obj)
             r = obj.mapResults();
-            data = extractMeasurement1D(r, obj.liveView_Freq);
 
-            positions = data.actualPosition;
-            S21 = data.S21;
+            % Process results differently depending on number of axes
+            switch(length(obj.axes))
+                case 1
+                    data = extractMeasurement1D(r, obj.liveView_Freq);
+
+                case 2
+                    axisIdx = find(obj.axes == obj.liveView_Axis);
+                    data = extractMeasurementSlice(r, obj.liveView_Freq, axisIdx, obj.liveView_SlicePosition);
+
+                % TODO: 3-axis measurements
+                otherwise
+                    error("Unexpected axis count");
+            end
+
+            if isfield(data, "S21")
+                positions = data.actualPosition;
+                S21 = data.S21;
+            else
+                % No data yet
+                positions = [0];
+                S21 = [0];
+            end
 
             notify(obj, "MeasurementsChange", Event.JobRunnerMeasurementsChangeEvent(positions, S21));
+
+            drawnow; % Process events and update UI/figures immediately
         end
 
         function prepLiveView(obj)
+            % Default to the middle frequency in our range
             freqs = obj.getLiveViewFrequenciesAvailable();
             obj.liveView_Freq = freqs(ceil(end/2));
+
+            % For now, just default to the "first" axis
+            obj.liveView_Axis = obj.axes(1);
+
+            % Default to the middle position of the axis in question
+            slices = obj.getLiveViewSlicesAvailable();
+            obj.liveView_SlicePosition = slices(ceil(end/2));
         end
 
         function actualPosition = setPosition(obj, axes, posArray, lastPos)
