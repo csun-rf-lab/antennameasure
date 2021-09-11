@@ -82,6 +82,14 @@ classdef Dummy < MotionController.AbstractMotionController
             end
         end
 
+        function slew = getSlewVelocity(obj, axis)
+            slew = 4;
+        end
+
+        function actual = setSlewVelocity(obj, axis, slew)
+            actual = slew;
+        end
+
         function moveTo(obj, axes, positions)
             for a = 1:length(axes)
                 assert(ismember(axes(a), obj.axes), "axis must be a valid axis.");
