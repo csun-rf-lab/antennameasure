@@ -17,11 +17,14 @@ classdef JobRunner < handle
         % Regular variables
         shouldStop = false % Set by stop() to bail out of a job run
         success = false
-        results
+        axes
+        measurements  % temporary data as the job runs
+        results       % actual data to save
     end
 
     events
         StateChange
+        MeasurementsChange
     end
     
     methods
@@ -38,7 +41,7 @@ classdef JobRunner < handle
             obj.onStateChange(true, 0, false);
 
             % Example: [1 2]
-            axes = plan.axes;
+            obj.axes = plan.axes;
 
             % plan.steps example:
             % [0 45; 0 60; 0 75; 0 90; 10 45; 10 60; 10 75; 10 90; 20 45; 20 60; 20 75; 20 90];
@@ -55,7 +58,7 @@ classdef JobRunner < handle
 
             % Track the last position we set so we can avoid re-setting axes that
             % haven't changed. This saves time.
-            lastPos = 9999999999 * ones(1, length(axes));
+            lastPos = 9999999999 * ones(1, length(obj.axes));
 
             % I don't know how to get the individual sets of positions out of the
             % loop directly, so using `entry` instead.
@@ -65,7 +68,7 @@ classdef JobRunner < handle
                 end
 
                 posArray = plan.steps(entry,:);
-                actualPosition = obj.setPosition(axes, posArray, lastPos);
+                actualPosition = obj.setPosition(obj.axes, posArray, lastPos);
 
                 r.position = posArray;
                 r.actualPosition = actualPosition;
@@ -75,20 +78,16 @@ classdef JobRunner < handle
 
                 percentComplete = entry/height(plan.steps) * 100;
                 obj.onStateChange(true, percentComplete, false);
+
+                obj.measurements = results;
+                obj.onMeasurementsChange();
             end
 
             % Clean up things with the VNA now that we're done
             obj.vna.afterMeasurements();
 
             % Remap the data into a useful format
-            obj.results.meta.version = 1;
-            obj.results.meta.axisNames = obj.allAxisNames(axes);
-            obj.results.meta.startFreq = obj.startFreq;
-            obj.results.meta.stopFreq = obj.stopFreq;
-%            obj.results.meta.SCAL = results.SCAL;
-%            obj.results.meta.REFP = results.REFP;
-%            obj.results.meta.REFV = results.REFV;
-            obj.results.data = remapMeasurements(results);
+            obj.results = obj.mapResults();
 
             if (obj.shouldStop)
                 obj.onStateChange(false, percentComplete, false);
@@ -119,6 +118,17 @@ classdef JobRunner < handle
     end % end methods
 
     methods (Access = protected)
+        % Refresh the job-in-progress measurements display
+        function onMeasurementsChange(obj)
+            r = obj.mapResults();
+            data = extractMeasurement1D(r, 3e9);
+
+            positions = data.actualPosition;
+            S21 = data.S21;
+
+            notify(obj, "MeasurementsChange", Event.JobRunnerMeasurementsChangeEvent(positions, S21));
+        end
+
         function actualPosition = setPosition(obj, axes, posArray, lastPos)
             if size(posArray,2) == 1
                 obj.log.Info(sprintf("Moving to (" + string(posArray) + ")"));
@@ -171,6 +181,17 @@ classdef JobRunner < handle
 
             % Record the params and prep the VNA for measurements
             obj.vna.beforeMeasurements();
+        end
+
+        function results = mapResults(obj)
+            results.meta.version = 1;
+            results.meta.axisNames = obj.allAxisNames(obj.axes);
+            results.meta.startFreq = obj.startFreq;
+            results.meta.stopFreq = obj.stopFreq;
+%            results.meta.SCAL = results.SCAL;
+%            results.meta.REFP = results.REFP;
+%            results.meta.REFV = results.REFV;
+            results.data = remapMeasurements(obj.measurements);
         end
 
         function onStateChange(obj, running, percentComplete, fault)
