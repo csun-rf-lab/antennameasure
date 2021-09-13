@@ -47,6 +47,14 @@ classdef HP8720 < VNA.AbstractVNA
             obj.send("S21");
             pause(2);
 
+            % Set sweep time. Based on some quick testing in the lab, it
+            % seems like we need to sweep no more than 100 points per
+            % second in order to get reasonable signal levels (due to delay
+            % times in cables, etc., in the test setup).
+            sweepTime = obj.measurementParams.numPoints / 100;
+            obj.setSweepTime(sweepTime);
+            obj.measurementParams.sweepTime = obj.getSweepTime();
+
             % Set the output data format
             obj.send(obj.dataXferMethod);
 
@@ -163,6 +171,24 @@ classdef HP8720 < VNA.AbstractVNA
             end
         end
 
+        function time = getSweepTime(obj)
+            try
+                time = obj.queryFreqParam("SWET?");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setSweepTime(obj, time)
+            try
+                obj.setNumParam("SWET", time);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
         function results = measure(obj)
             % MEASURE Return measurement results
 
@@ -195,6 +221,9 @@ classdef HP8720 < VNA.AbstractVNA
 % TODO: Can we poll to see when the operation completes?
 % Yes? Use OPC command.  But couldn't get it working?
 
+                % Make sure we wait as long as our sweep should take
+                pause(obj.measurementParams.sweepTime);
+
                 % Output the data
                 obj.log.Info("Transferring S21 data...");
                 obj.send("OUTPDATA");
@@ -218,6 +247,7 @@ classdef HP8720 < VNA.AbstractVNA
 
                 results.startFreq = obj.measurementParams.startFreq;
                 results.stopFreq = obj.measurementParams.stopFreq;
+                results.sweepTime = obj.measurementParams.sweepTime;
                 results.SCAL = obj.measurementParams.SCAL;
                 results.REFP = obj.measurementParams.REFP;
                 results.REFV = obj.measurementParams.REFV;

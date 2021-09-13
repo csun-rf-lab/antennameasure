@@ -88,14 +88,15 @@ classdef MI4190 < MotionController.AbstractMotionController
             obj.checkAxisNumber(axis); % validate data
 
             if isstring(obj.axisNames(axis)) && strlength(obj.axisNames(axis)) > 0
-                name = obj.axisNames(axis);
+                namecell = obj.axisNames(axis);
+                name = namecell{1};
             else
                 if obj.connected
                     try
                         obj.send(sprintf("CONT1:AXIS(%d):NAME?", obj.realAxis(axis)));
                         name = obj.recv(32);
 
-                        obj.axisNames(axis) = name;
+                        obj.axisNames(axis) = cellstr(name);
                     catch e
                         disp(e);
                         obj.log.Error(e.message);

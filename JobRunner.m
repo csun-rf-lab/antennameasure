@@ -69,6 +69,7 @@ classdef JobRunner < handle
             obj.shouldStop = false;
             obj.success = false;
             obj.onStateChange(true, 0, false);
+            drawnow;
 
             plan = obj.plan;
 
