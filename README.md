@@ -6,6 +6,11 @@ This repository is a work in progress. It is not ready for general use. This not
 
 * MATLAB R2021a
 
+# Committing from the lab computer
+
+To commit from the lab computer (where this repository is checked out via HTTPS), you need to create a Personal Access Token to use as your password:
+https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+
 # TODO
 
 * Ability to set axis velocities from job config and from motion controller app
