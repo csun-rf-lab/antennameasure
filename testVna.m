@@ -2,7 +2,7 @@
 clc; clear all; close all;
 
 gpib_addr = 16;
-comport = "/dev/ttyUSB0";
+comport = "COM6";
 log = Logger();
 
 

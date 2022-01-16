@@ -3,7 +3,7 @@ if ~isempty(instrfind)
     delete(instrfind)
 end
 
-sp = serialport("/dev/ttyUSB0", 9600, "Timeout", 0.5);
+sp = serialport("COM3", 9600, "Timeout", 0.5);
 %                sp = serial("/dev/ttyUSB0");
 
                 % Prologix Controller 4.2 requires CR as command terminator, LF is

@@ -274,6 +274,9 @@ classdef JobRunner < handle
         end
 
         function prepVNA(obj, plan)
+            % Initialize VNA
+            obj.vna.init();
+            
             % Set measurement params
             obj.vna.setStartFreq(plan.startFreq);
             obj.vna.setStopFreq(plan.stopFreq);

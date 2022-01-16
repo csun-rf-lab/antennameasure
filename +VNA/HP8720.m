@@ -25,35 +25,39 @@ classdef HP8720 < VNA.AbstractVNA
 
             % Preset
             obj.send("PRES");
+            pause(2);
 
-            % Set to sweep continuously
-            obj.send("CONT");
+            % We only record S21.
+            obj.send("S21");
+
+            % Set scale to 20 dB/div
+            obj.send("SCAL 20");
+
+            % Set IF BW to 10 Hz
+            obj.send("IFBW 10");
         end
 
         function beforeMeasurements(obj)
-            % BEFOREMEASUREMENTS Prepare to take a set of measurements
+            % BEFOREMEASUREMENTS Prepare to take a set of measurements   
 
             % Read the start/stop frequencies and number of points from the VNA:
             obj.measurementParams.startFreq = obj.getStartFreq();
             obj.measurementParams.stopFreq = obj.getStopFreq();
             obj.measurementParams.numPoints = obj.getNumPts();
+            obj.measurementParams.IFBW = obj.getIFBW();
+            obj.measurementParams.sweepTime = obj.getSweepTime();
 
             obj.measurementParams.SCAL = obj.queryFreqParam("SCAL");
             obj.measurementParams.REFP = obj.queryFreqParam("REFP");
             obj.measurementParams.REFV = obj.queryFreqParam("REFV");
-
-            % We only record S21.
-            % Once set, we pause for a moment so the VNA can catch up.
-            obj.send("S21");
-            pause(2);
+            
 
             % Set sweep time. Based on some quick testing in the lab, it
             % seems like we need to sweep no more than 100 points per
             % second in order to get reasonable signal levels (due to delay
             % times in cables, etc., in the test setup).
-            sweepTime = obj.measurementParams.numPoints / 100;
-            obj.setSweepTime(sweepTime);
-            obj.measurementParams.sweepTime = obj.getSweepTime();
+            %sweepTime = obj.measurementParams.numPoints / 20;
+            %obj.setSweepTime(sweepTime);
 
             % Set the output data format
             obj.send(obj.dataXferMethod);
@@ -171,6 +175,24 @@ classdef HP8720 < VNA.AbstractVNA
             end
         end
 
+        function ifbw = getIFBW(obj)
+            try
+                ifbw = obj.queryFreqParam("IFBW?");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+        
+        function setIFBW(obj, ifbw)
+            try
+                obj.setNumParam("IFBW", ifbw);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
         function time = getSweepTime(obj)
             try
                 time = obj.queryFreqParam("SWET?");
@@ -222,7 +244,7 @@ classdef HP8720 < VNA.AbstractVNA
 % Yes? Use OPC command.  But couldn't get it working?
 
                 % Make sure we wait as long as our sweep should take
-                pause(obj.measurementParams.sweepTime);
+                pause(obj.measurementParams.sweepTime*1.1);
 
                 % Output the data
                 obj.log.Info("Transferring S21 data...");
