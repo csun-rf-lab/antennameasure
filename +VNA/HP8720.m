@@ -34,7 +34,8 @@ classdef HP8720 < VNA.AbstractVNA
             obj.send("SCAL 20");
 
             % Set IF BW to 10 Hz
-            obj.send("IFBW 10");
+            ifbw = 1000 / (obj.measurementParams.stopFreq / 1e9);
+            obj.send("IFBW " + num2str(ifbw));
         end
 
         function beforeMeasurements(obj)
