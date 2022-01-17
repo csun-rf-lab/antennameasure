@@ -42,6 +42,11 @@ https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/c
 * Click the "Package" button and select a place to save the installer.
 * When the process completes, the `for_redistribution` folder will contain the installer executable.
 
+When installing the application:
+
+* In theory, you must separately install the Cisco openh264 driver in the same folder: https://github.com/cisco/openh264/releases/v1.8.0
+(per instructions here: https://ww2.mathworks.cn/help/supportpkg/ipcamera/ug/ip-camera-acquistion-overview.html)
+* HOWEVER, that doesn't seem to be working yet. The camera works fine when run from within MATLAB rather than as a standlone application.
 
 
 # Useful links
