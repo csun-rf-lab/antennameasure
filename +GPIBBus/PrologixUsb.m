@@ -18,6 +18,7 @@ classdef PrologixUsb < GPIBBus.AbstractGPIBBus
             obj.comport = comport;
             obj.setConnectedState(false);
 
+            obj.addr = -1; % This will be changed when we try to send a msg
             obj.connect();
         end
 
@@ -125,7 +126,7 @@ classdef PrologixUsb < GPIBBus.AbstractGPIBBus
         end
 
         function data = fread_FORM5(obj, numDataPoints)
-            % FREAD_FORM4 Read FORM5 data from the HP VNA.
+            % FREAD_FORM5 Read FORM5 data from the HP VNA.
 
             data = fread(obj.sp, 2); % "#A"
             % TODO: Check that we did in fact receive "#A"

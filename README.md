@@ -29,6 +29,21 @@ https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/c
 * take reference antenna into account in final results
 * aux gpio controls
 
+# Compiling
+
+* In matlab, `run applicationCompiler`.
+* Pick "main file" to be `App.mlapp`.
+* "Runtime downloaded from web" is fine. This means the MATLAB libraries will be downloaded from the internet when the application is installed.
+* Rename the installer from the default "MyAppInstaller_web" to "AntennaMeasureInstaller".
+* Fill in the application information:
+** name: AntennaMeasure
+** version: Pick a number higher than the current one installed, and use semantic versioning.
+* "Files required for your application to run": Just select all of them in the repository.
+* Click the "Package" button and select a place to save the installer.
+* When the process completes, the `for_redistribution` folder will contain the installer executable.
+
+
+
 # Useful links
 
 * Prologix devices: http://prologix.biz/
