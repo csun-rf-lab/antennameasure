@@ -32,10 +32,6 @@ classdef HP8720 < VNA.AbstractVNA
 
             % Set scale to 20 dB/div
             obj.send("SCAL 20");
-
-            % Set IF BW to 10 Hz
-            ifbw = 1000 / (obj.measurementParams.stopFreq / 1e9);
-            obj.send("IFBW " + num2str(ifbw));
         end
 
         function beforeMeasurements(obj)
@@ -45,20 +41,17 @@ classdef HP8720 < VNA.AbstractVNA
             obj.measurementParams.startFreq = obj.getStartFreq();
             obj.measurementParams.stopFreq = obj.getStopFreq();
             obj.measurementParams.numPoints = obj.getNumPts();
+
+            % Set IF BW to something reasonable
+            ifbw = 1000 / (obj.measurementParams.stopFreq / 1e9);
+            obj.send("IFBW " + num2str(ifbw));
+
+            % Get remaining config from VNA
             obj.measurementParams.IFBW = obj.getIFBW();
             obj.measurementParams.sweepTime = obj.getSweepTime();
-
             obj.measurementParams.SCAL = obj.queryFreqParam("SCAL");
             obj.measurementParams.REFP = obj.queryFreqParam("REFP");
             obj.measurementParams.REFV = obj.queryFreqParam("REFV");
-            
-
-            % Set sweep time. Based on some quick testing in the lab, it
-            % seems like we need to sweep no more than 100 points per
-            % second in order to get reasonable signal levels (due to delay
-            % times in cables, etc., in the test setup).
-            %sweepTime = obj.measurementParams.numPoints / 20;
-            %obj.setSweepTime(sweepTime);
 
             % Set the output data format
             obj.send(obj.dataXferMethod);
