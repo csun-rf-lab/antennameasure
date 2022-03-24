@@ -43,6 +43,9 @@ classdef HP8720 < VNA.AbstractVNA
             obj.measurementParams.numPoints = obj.getNumPts();
 
             % Set IF BW to something reasonable
+            % If you get an error on the formula for ifbw (below),
+            % comment that out and uncomment the hard-coded value.
+            %ifbw = 10;
             ifbw = 1000 / (obj.measurementParams.stopFreq / 1e9);
             obj.send("IFBW " + num2str(ifbw));
 
