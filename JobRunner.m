@@ -150,7 +150,11 @@ classdef JobRunner < handle
             startFreq = obj.startFreq;
             stopFreq = obj.stopFreq;
             numPts = obj.numPts;
-            freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPts-1):stopFreq)/1e5);
+            if (startFreq == stopFreq)
+                freq = [startFreq];
+            else
+                freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPts-1):stopFreq)/1e5);
+            end
         end
 
         function freq = getLiveViewFrequency(obj)
@@ -278,14 +282,21 @@ classdef JobRunner < handle
             obj.vna.init();
             
             % Set measurement params
-            obj.vna.setStartFreq(plan.startFreq);
-            obj.vna.setStopFreq(plan.stopFreq);
-            obj.vna.setNumPts(plan.numPts);
-
-            % Make sure we represent things correctly in the result
-            obj.startFreq = obj.vna.getStartFreq();
-            obj.stopFreq = obj.vna.getStopFreq();
-            obj.numPts = obj.vna.getNumPts();
+            if plan.startFreq == plan.stopFreq
+                obj.vna.setSingleFreq(plan.startFreq);
+                cwfreq = obj.vna.getSingleFreq();
+                obj.startFreq = cwfreq;
+                obj.stopFreq = cwfreq;
+                obj.numPts = 1;
+            else
+                obj.vna.setStartFreq(plan.startFreq);
+                obj.vna.setStopFreq(plan.stopFreq);
+                obj.vna.setNumPts(plan.numPts);
+                % Make sure we represent things correctly in the result
+                obj.startFreq = obj.vna.getStartFreq();
+                obj.stopFreq = obj.vna.getStopFreq();
+                obj.numPts = obj.vna.getNumPts();
+            end
 
             % Record the params and prep the VNA for measurements
             obj.vna.beforeMeasurements();

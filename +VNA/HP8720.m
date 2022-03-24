@@ -37,14 +37,22 @@ classdef HP8720 < VNA.AbstractVNA
         function beforeMeasurements(obj)
             % BEFOREMEASUREMENTS Prepare to take a set of measurements   
 
-            % Read the start/stop frequencies and number of points from the VNA:
-            obj.measurementParams.startFreq = obj.getStartFreq();
-            obj.measurementParams.stopFreq = obj.getStopFreq();
-            obj.measurementParams.numPoints = obj.getNumPts();
+            if obj.isCWMode()
+                cwfreq = obj.getSingleFreq();
+                obj.measurementParams.startFreq = cwfreq;
+                obj.measurementParams.stopFreq = cwfreq;
+                obj.measurementParams.numPoints = 1;
+            else
+                % Read the start/stop frequencies and number of points from the VNA:
+                obj.measurementParams.startFreq = obj.getStartFreq();
+%%% TODO: Sometimes StopFreq is just [] .... why?
+                obj.measurementParams.stopFreq = obj.getStopFreq();
+                obj.measurementParams.numPoints = obj.getNumPts();
 
-            % Set IF BW to something reasonable
-            ifbw = 1000 / (obj.measurementParams.stopFreq / 1e9);
-            obj.send("IFBW " + num2str(ifbw));
+                % Set IF BW to something reasonable
+                ifbw = 1000 / (obj.measurementParams.stopFreq / 1e9);
+                obj.send("IFBW " + num2str(ifbw));
+            end
 
             % Get remaining config from VNA
             obj.measurementParams.IFBW = obj.getIFBW();
@@ -66,6 +74,44 @@ classdef HP8720 < VNA.AbstractVNA
 
             % Set to sweep continuously
             obj.send("CONT");
+        end
+
+        function yesno = isCWMode(obj)
+            % ISCWMODE Return true if in cw mode, false otherwise.
+            try
+                cw = obj.queryFreqParam("CWTIME");
+                if cw == 1
+                    yesno = true;
+                elseif cw == 0
+                    yesno = false;
+                else
+                    % Sometimes communications don't work...
+                    error("Invalid (or no) response from VNA")
+                end
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function cw = getSingleFreq(obj)
+            % GETSINGLEFREQ Get the CW-mode frequency for measurements
+            try
+                cw = obj.queryFreqParam("CWFREQ");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setSingleFreq(obj, freq)
+            % SETSTARTFREQ Set the frequency for CW measurements
+            try
+                obj.setFreqParam("CWFREQ", freq);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
 
         function start = getStartFreq(obj)
@@ -212,11 +258,20 @@ classdef HP8720 < VNA.AbstractVNA
             stopFreq = obj.measurementParams.stopFreq;
             numPoints = obj.measurementParams.numPoints;
 
+            % Sanity check
+            if startFreq == stopFreq && numPoints ~= 1
+                error("Attempting to measure 0 Hz span with more than one point")
+            end
+
             timeout = obj.getTimeout();
 %            try
-                % Compute the expected frequency points from the VNA. The 8720B has a 100
-                % KHz frequency resolution, so round to this.
-                freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPoints-1):stopFreq)/1e5);
+                % Compute the expected frequency points from the VNA.
+                if (startFreq == stopFreq)
+                    freq = [startFreq];
+                else
+                    % The 8720B has a 100 KHz frequency resolution, so round to this.
+                    freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPoints-1):stopFreq)/1e5);
+                end
 
                 % Increase the timeout to give enough time for data transfer
                 % This is based on the number of points set on the VNA
@@ -243,7 +298,8 @@ classdef HP8720 < VNA.AbstractVNA
                 % Output the data
                 obj.log.Info("Transferring S21 data...");
                 obj.send("OUTPDATA");
-
+%%% TODO: "OUTPDATA will not transmit data until all formatting functions
+%%% have completed" (Programmer's Guide page 5-4 / p348)
                 if obj.dataXferMethod == "FORM4"
                     dataTran = obj.fread();
                     % Convert character data to numbers
@@ -252,6 +308,17 @@ classdef HP8720 < VNA.AbstractVNA
                 else % FORM5
                     dataTran = obj.fread_FORM5(numPoints);
                     S21 = dataTran(1:2:end) + j*dataTran(2:2:end);
+                end
+
+                % When in CW mode, OUTPDATA returns four complex numbers.
+                % I think these are the four S-params, but can't find any
+                % specific details about this in the programmer's guide.
+                % The assumption here is that the second one is S21,
+                % which matches with the order the guide shows for some
+                % other functions that return S-params.
+                % See page 1-158 (172) of 8720B Programmer's Guide.
+                if obj.isCWMode()
+                    S21 = S21(2);
                 end
 
                 % Sanity check
