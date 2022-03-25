@@ -24,6 +24,7 @@ classdef JobRunner < handle
         axes
         measurements  % temporary data as the job runs
         results       % actual data to save
+        step_times    % time expended to complete each step
 
         % Live view
         liveView_Freq
@@ -83,11 +84,13 @@ classdef JobRunner < handle
 
             % I don't know how to get the individual sets of positions out of the
             % loop directly, so using `entry` instead.
+            obj.step_times = [];
             for entry = 1:height(plan.steps) % height is new in matlab R2020b
                 if (obj.shouldStop)
                     break;
                 end
 
+                t = tic;
                 posArray = plan.steps(entry,:);
                 actualPosition = obj.setPosition(obj.axes, posArray, lastPos);
 
@@ -101,8 +104,8 @@ classdef JobRunner < handle
                 obj.onStateChange(true, percentComplete, false);
 
                 obj.measurements = results;
+                obj.step_times(end+1) = toc(t);
                 obj.onMeasurementsChange();
-                drawnow;
             end
 
             % Clean up things with the VNA now that we're done
@@ -216,8 +219,19 @@ classdef JobRunner < handle
                 S21 = [0];
             end
 
-            notify(obj, "MeasurementsChange", Event.JobRunnerMeasurementsChangeEvent(positions, S21));
+            % Calculate an estimate of the time remaining.
+            % Don't use the first step in our estimate, since we may have
+            % needed to move quite a bit for it.
+            total_step_ct = height(obj.plan.steps);
+            elapsed_step_ct = length(obj.step_times);
+            if elapsed_step_ct == 1
+                time_remaining_secs = -1; % Tell frontend we don't know yet
+            else
+                time_remaining_secs = (total_step_ct - elapsed_step_ct) * mean(obj.step_times(2:end));
+            end
 
+            % Send event
+            notify(obj, "MeasurementsChange", Event.JobRunnerMeasurementsChangeEvent(positions, S21, time_remaining_secs));
             drawnow; % Process events and update UI/figures immediately
         end
 
