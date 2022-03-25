@@ -140,7 +140,7 @@ classdef PrologixUsb < GPIBBus.AbstractGPIBBus
 
     methods (Access = protected)
         function setGPIBAddress(obj, addr)
-            obj.log.Info(sprintf("TRYING TO SET ADDRESS %d (currently %d)", addr, obj.addr));
+            obj.log.Debug(sprintf("TRYING TO SET ADDRESS %d (currently %d)", addr, obj.addr));
            if addr ~= obj.addr
                 obj.addr = addr;
                 if obj.connected
