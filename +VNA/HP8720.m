@@ -45,8 +45,8 @@ classdef HP8720 < VNA.AbstractVNA
             % Set IF BW to something reasonable
             % If you get an error on the formula for ifbw (below),
             % comment that out and uncomment the hard-coded value.
-            %ifbw = 10;
-            ifbw = 1000 / (obj.measurementParams.stopFreq / 1e9);
+            ifbw = 10;
+            %ifbw = 1000 / (obj.measurementParams.stopFreq / 1e9);
             obj.send("IFBW " + num2str(ifbw));
 
             % Get remaining config from VNA
@@ -216,66 +216,53 @@ classdef HP8720 < VNA.AbstractVNA
             numPoints = obj.measurementParams.numPoints;
 
             timeout = obj.getTimeout();
-%            try
-                % Compute the expected frequency points from the VNA. The 8720B has a 100
-                % KHz frequency resolution, so round to this.
-                freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPoints-1):stopFreq)/1e5);
 
-                % Increase the timeout to give enough time for data transfer
-                % This is based on the number of points set on the VNA
-                if obj.dataXferMethod == "FORM5"
-                    % 1 second works for FORM5,
-                    % even for the max number of data points.
-                    obj.setTimeout(1);
-                else
-                    % FORM4
-                    % The following emperical formula is approximate.
-                    obj.setTimeout(ceil(numPoints/100*0.5));
+            % Compute the expected frequency points from the VNA. The 8720B has a 100
+            % KHz frequency resolution, so round to this.
+            freq = 1e5*round((startFreq:(stopFreq-startFreq)/(numPoints-1):stopFreq)/1e5);
+
+            % Increase the timeout to give enough time for data transfer
+            % This is based on the number of points set on the VNA
+            if obj.dataXferMethod == "FORM5"
+                % 1 second works for FORM5,
+                % even for the max number of data points.
+                obj.setTimeout(1);
+            else
+                % FORM4
+                % The following emperical formula is approximate.
+                obj.setTimeout(ceil(numPoints/100*0.5));
+            end
+
+            % Make the measurement and return the data
+            maxAttempts = 3;
+            for attempt = 1:maxAttempts
+                try
+                    S21 = obj.getMeasurementData(numPoints);
+                    break; % on success, don't try again.
+                catch e
+                    disp(e);
+                    obj.log.Error("Failed to obtain measurement data.");
+
+                    if (attempt < maxAttempts)
+                        obj.log.Error("Making another attempt...");
+                    else
+                        obj.log.Error("Max attempts reached.");
+                        obj.setTimeout(timeout); % Restore timeout
+                        error("HP8720::measure(): Max measurement attempts reached");
+                    end
                 end
+            end
 
-                % Perform a single sweep and pause to give time for a single sweep to
-                % complete. This may need to be adjusted based on the frequency span,
-                % number of points, IF bandwidth, and averaging
-                obj.send("SING");
-% TODO: Can we poll to see when the operation completes?
-% Yes? Use OPC command.  But couldn't get it working?
+            obj.log.Info("Done.");
 
-                % Make sure we wait as long as our sweep should take
-                pause(obj.measurementParams.sweepTime*1.1);
-
-                % Output the data
-                obj.log.Info("Transferring S21 data...");
-                obj.send("OUTPDATA");
-
-                if obj.dataXferMethod == "FORM4"
-                    dataTran = obj.fread();
-                    % Convert character data to numbers
-                    dataNums = textscan(dataTran,'%f%f','Delimiter',',');
-                    S21 = dataNums{1} + j*dataNums{2};
-                else % FORM5
-                    dataTran = obj.fread_FORM5(numPoints);
-                    S21 = dataTran(1:2:end) + j*dataTran(2:2:end);
-                end
-
-                % Sanity check
-                if length(S21) ~= numPoints
-                    error("HP8720::measure(): Received wrong number of data points: %d", length(S21));
-                end
-
-                obj.log.Info("Done.");
-
-                results.startFreq = obj.measurementParams.startFreq;
-                results.stopFreq = obj.measurementParams.stopFreq;
-                results.sweepTime = obj.measurementParams.sweepTime;
-                results.SCAL = obj.measurementParams.SCAL;
-                results.REFP = obj.measurementParams.REFP;
-                results.REFV = obj.measurementParams.REFV;
-                results.freq = freq;
-                results.S21 = S21;
-%             catch e
-%                 disp(e);
-%                 obj.log.Error(e.message);
-%             end % try/catch
+            results.startFreq = obj.measurementParams.startFreq;
+            results.stopFreq = obj.measurementParams.stopFreq;
+            results.sweepTime = obj.measurementParams.sweepTime;
+            results.SCAL = obj.measurementParams.SCAL;
+            results.REFP = obj.measurementParams.REFP;
+            results.REFV = obj.measurementParams.REFV;
+            results.freq = freq;
+            results.S21 = S21;
 
             try
                 obj.onMeasurement(results); % Notify event handlers
@@ -288,6 +275,42 @@ classdef HP8720 < VNA.AbstractVNA
     end % methods
 
     methods (Access = protected)
+        function S21 = getMeasurementData(obj, numPoints)
+            % getMeasurementData is called from measure() to initiate a
+            % single measurement and obtain the results from the VNA. It is
+            % isolated here so that multiple attempts can be made, in the
+            % event of a bus communications glitch.
+
+            % Perform a single sweep and pause to give time for a single sweep to
+            % complete. This may need to be adjusted based on the frequency span,
+            % number of points, IF bandwidth, and averaging
+            obj.send("SING");
+% TODO: Can we poll to see when the operation completes?
+% Yes? Use OPC command.  But couldn't get it working?
+
+            % Make sure we wait as long as our sweep should take
+            pause(obj.measurementParams.sweepTime*1.1);
+
+            % Output the data
+            obj.log.Info("Transferring S21 data...");
+            obj.send("OUTPDATA");
+
+            if obj.dataXferMethod == "FORM4"
+                dataTran = obj.fread();
+                % Convert character data to numbers
+                dataNums = textscan(dataTran,'%f%f','Delimiter',',');
+                S21 = dataNums{1} + j*dataNums{2};
+            else % FORM5
+                dataTran = obj.fread_FORM5(numPoints);
+                S21 = dataTran(1:2:end) + j*dataTran(2:2:end);
+            end
+
+            % Sanity check
+            if length(S21) ~= numPoints
+                error("HP8720::getMeasurementData(): Received wrong number of data points: %d (expected %d)", length(S21), numPoints);
+            end
+        end
+
         function hz = queryFreqParam(obj, param)
             obj.send(sprintf("%s?", param));
             hz = obj.recv(40);

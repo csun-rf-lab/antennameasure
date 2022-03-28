@@ -82,39 +82,50 @@ classdef JobRunner < handle
             % haven't changed. This saves time.
             lastPos = 9999999999 * ones(1, length(obj.axes));
 
-            % I don't know how to get the individual sets of positions out of the
-            % loop directly, so using `entry` instead.
-            obj.step_times = [];
-            for entry = 1:height(plan.steps) % height is new in matlab R2020b
-                if (obj.shouldStop)
-                    break;
+            fault = false;
+            percentComplete = 0;
+            try
+                % I don't know how to get the individual sets of positions out of the
+                % loop directly, so using `entry` instead.
+                obj.step_times = [];
+                for entry = 1:height(plan.steps) % height is new in matlab R2020b
+                    if (obj.shouldStop)
+                        break;
+                    end
+    
+                    t = tic;
+                    posArray = plan.steps(entry,:);
+                    actualPosition = obj.setPosition(obj.axes, posArray, lastPos);
+    
+                    r.position = posArray;
+                    r.actualPosition = actualPosition;
+                    r.measurements = obj.takeMeasurement();
+                    results(end+1) = r;
+                    lastPos = posArray;
+    
+                    percentComplete = entry/height(plan.steps) * 100;
+                    obj.onStateChange(true, percentComplete, false);
+    
+                    obj.measurements = results;
+                    obj.step_times(end+1) = toc(t);
+                    obj.onMeasurementsChange();
                 end
-
-                t = tic;
-                posArray = plan.steps(entry,:);
-                actualPosition = obj.setPosition(obj.axes, posArray, lastPos);
-
-                r.position = posArray;
-                r.actualPosition = actualPosition;
-                r.measurements = obj.takeMeasurement();
-                results(end+1) = r;
-                lastPos = posArray;
-
-                percentComplete = entry/height(plan.steps) * 100;
-                obj.onStateChange(true, percentComplete, false);
-
-                obj.measurements = results;
-                obj.step_times(end+1) = toc(t);
-                obj.onMeasurementsChange();
+    
+                % Clean up things with the VNA now that we're done
+                obj.vna.afterMeasurements();
+    
+                % Remap the data into a useful format
+                obj.results = obj.mapResults();
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+                fault = true;
             end
 
-            % Clean up things with the VNA now that we're done
-            obj.vna.afterMeasurements();
-
-            % Remap the data into a useful format
-            obj.results = obj.mapResults();
-
-            if (obj.shouldStop)
+            if (fault)
+                obj.onStateChange(false, percentComplete, true);
+                obj.log.Error("Stopped job due to fault");
+            elseif (obj.shouldStop)
                 obj.onStateChange(false, percentComplete, false);
                 obj.log.Info("Stopped job at user request");
             else
