@@ -136,6 +136,12 @@ classdef PrologixUsb < GPIBBus.AbstractGPIBBus
             data = fread(obj.sp, numDataPoints*2*4, "float32");
             obj.log.Debug(sprintf("fread(): %s", data));
         end
+
+        function sdc(obj, recipientAddr)
+            obj.log.Debug(sprintf("SDC"));
+            obj.setGPIBAddress(uint8(recipientAddr));
+            fprintf(obj.sp, "++clr");
+        end
     end % methods
 
     methods (Access = protected)

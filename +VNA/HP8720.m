@@ -24,8 +24,16 @@ classdef HP8720 < VNA.AbstractVNA
             % INIT Initialize VNA for use
 
             % Preset
-            obj.send("PRES");
-            pause(2);
+            obj.gpibSDC();
+            obj.send("OPC?;PRES;");
+            try
+                maxInitWait = 10; % wait up to 10 seconds
+                obj.waitOpc(maxInitWait);
+            catch e
+                msg = sprintf("Failed to initialize VNA after %d seconds", maxInitWait);
+                obj.log.Error(msg);
+                error("HP8720::init(): %s", msg);
+            end
 
             % We only record S21.
             obj.send("S21");
@@ -281,15 +289,18 @@ classdef HP8720 < VNA.AbstractVNA
             % isolated here so that multiple attempts can be made, in the
             % event of a bus communications glitch.
 
-            % Perform a single sweep and pause to give time for a single sweep to
-            % complete. This may need to be adjusted based on the frequency span,
-            % number of points, IF bandwidth, and averaging
-            obj.send("SING");
-% TODO: Can we poll to see when the operation completes?
-% Yes? Use OPC command.  But couldn't get it working?
-
-            % Make sure we wait as long as our sweep should take
-            pause(obj.measurementParams.sweepTime*1.1);
+            % Perform a single sweep and poll for completion
+            obj.send("OPC?;SING;");
+            try
+                % Make sure we wait as long as our sweep should take
+                maxWait = obj.measurementParams.sweepTime*1.1;
+                % Poll for operation completion
+                obj.waitOpc(maxWait);
+            catch e
+                msg = sprintf("Failed to complete measurement after %d seconds", maxWait);
+                obj.log.Error(msg);
+                error("HP8720::getMeasurementData(): %s", msg);
+            end
 
             % Output the data
             obj.log.Info("Transferring S21 data...");
@@ -315,6 +326,26 @@ classdef HP8720 < VNA.AbstractVNA
             obj.send(sprintf("%s?", param));
             hz = obj.recv(40);
             hz = str2num(hz);
+        end
+
+        function waitOpc(obj, maxWait)
+            for iteration=0:maxWait
+% TODO: Don't just assume read timeout is 1 second
+                % For details about OPC? command, see programming manual
+                % page 307 (2-15)
+                opc = obj.recv(1);
+                if (str2double(opc) == 1)
+                    break;
+                end
+                % Next iteration is about a second later, because this is
+                % the read timeout for the serial operations.
+            end
+
+            if (str2double(opc) ~= 1)
+                msg = sprintf("VNA operation failed to complete after %d seconds", maxWait);
+                obj.log.Error(msg);
+                error("HP8720::waitOpc(): %s", msg);
+            end
         end
 
         % value is in hz
@@ -349,6 +380,10 @@ classdef HP8720 < VNA.AbstractVNA
 
         % Overridden in Prologix class
         function setTimeout(obj, timeout)
+        end
+
+        % Overridden in Prologix class
+        function gpibSDC(obj)
         end
     end % protected methods
 end

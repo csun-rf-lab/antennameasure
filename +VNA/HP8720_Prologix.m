@@ -67,6 +67,10 @@ classdef HP8720_Prologix < VNA.HP8720
         function setTimeout(obj, timeout)
             obj.gpib.setTimeout(timeout);
         end
+
+        function gpibSDC(obj)
+            obj.gpib.sdc(obj.addr);
+        end
     end % protected methods
 end
 

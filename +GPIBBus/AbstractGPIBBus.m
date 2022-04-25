@@ -22,6 +22,9 @@ classdef AbstractGPIBBus< handle
 
         fread(obj)
         % Read data from the bus (used in specific scenarios)
+
+        sdc(obj, recipientAddr)
+        % Send a SDC (device clear) command
     end
 
     methods
