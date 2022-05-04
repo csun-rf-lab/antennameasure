@@ -182,7 +182,7 @@ classdef HP8720 < VNA.AbstractVNA
 
         function ifbw = getIFBW(obj)
             try
-                ifbw = obj.queryFreqParam("IFBW?");
+                ifbw = obj.queryFreqParam("IFBW");
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -200,7 +200,7 @@ classdef HP8720 < VNA.AbstractVNA
 
         function time = getSweepTime(obj)
             try
-                time = obj.queryFreqParam("SWET?");
+                time = obj.queryFreqParam("SWET");
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -335,6 +335,7 @@ classdef HP8720 < VNA.AbstractVNA
                 % page 307 (2-15)
                 opc = obj.recv(1);
                 if (str2double(opc) == 1)
+                    obj.recv(1); % clear a non-printable character from the buffer
                     break;
                 end
                 % Next iteration is about a second later, because this is
