@@ -368,7 +368,7 @@ classdef MI4190 < MotionController.AbstractMotionController
 
             obj.checkAxisNumber(axis); % validate data
 
-            try
+            %try
                 pos = str2double("nan");
                 attempts = 0;
                 while isnan(pos) && attempts < 5 % Try up to 5 times if we get bad data
@@ -386,11 +386,11 @@ classdef MI4190 < MotionController.AbstractMotionController
                         obj.log.Warn(sprintf("getPosition(): Reattempt (%d total attempts)", attempts));
                     end
                 end
-            catch e
-                disp(e);
-                obj.log.Error(e.message);
-                pos = -99999999999;
-            end
+%             catch e
+%                 disp(e);
+%                 obj.log.Error(e.message);
+%                 pos = -99999999999;
+%             end
         end
 
         function pos = getPositionMultiple(obj, axes)
@@ -451,6 +451,13 @@ classdef MI4190 < MotionController.AbstractMotionController
                 pause(0.5);
 
                 pos = obj.getPosition(axis);
+
+                moving = obj.isMoving(axis);
+                f = obj.hasFault(axis);
+                if (~moving && ~f && abs(pos - position) <= thresh)
+                    % This means there's a communications glitch
+                    error("Stopped moving, but haven't reached destination or faulted.")
+                end
             end
 % TODO: Alternatively, check the axis status to see when it has stopped
 % moving?
@@ -575,6 +582,26 @@ obj.onStateChange(axis, false, f, pos);
                     obj.log.Error("Fault!");
                 else
                     fault = false;
+                end
+%            catch e
+%                disp(e);
+%                obj.log.Error(e.message);
+%            end
+        end
+
+        function moving = isMoving(obj, axis)
+            % see also getStatus()
+            obj.checkAxisNumber(axis); % validate data
+
+%            try
+                obj.send(sprintf("CONT1:AXIS(%d):STAT?", obj.realAxis(axis)));
+                currStat = obj.recv(100);
+
+                intStat = uint16(str2double(regexp(currStat, "\d*", "match")));
+                if bitget(intStat, 7+1) == 1
+                    moving = true;
+                else
+                    moving = false;
                 end
 %            catch e
 %                disp(e);

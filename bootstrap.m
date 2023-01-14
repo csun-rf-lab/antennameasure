@@ -29,6 +29,7 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 
     % Set up VNA
     vnalog = Logger();
+vnalog.echoToCli(true); % For debugging
     vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
     %vna = VNA.Dummy(vnalog);
 end
