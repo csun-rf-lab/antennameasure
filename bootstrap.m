@@ -24,11 +24,12 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 
     % Set up motion controller
     motlog = Logger();
-    m = MotionController.MI4190_Prologix(b, MI4190_gpib_addr, axes, motlog);
-    %m = MotionController.Dummy(motlog);
+    %m = MotionController.MI4190_Prologix(b, MI4190_gpib_addr, axes, motlog);
+    m = MotionController.Dummy(motlog);
 
     % Set up VNA
     vnalog = Logger();
-    vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
-    %vna = VNA.Dummy(vnalog);
+vnalog.echoToCli(true); % For debugging
+    %vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
+    vna = VNA.Dummy(vnalog);
 end

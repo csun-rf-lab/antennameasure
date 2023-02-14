@@ -40,6 +40,8 @@ classdef HP8720 < VNA.AbstractVNA
 
             % Set scale to 20 dB/div
             obj.send("SCAL 20");
+
+            pause(1); % give it a moment to think
         end
 
         function beforeMeasurements(obj)
@@ -93,6 +95,7 @@ classdef HP8720 < VNA.AbstractVNA
             % SETSTARTFREQ Set the start frequency for measurements
             try
                 obj.setFreqParam("STAR", freq);
+                pause(1); % give it a moment to think
             catch e
                 disp(e);
                 obj.log.Error(e.message);
@@ -103,6 +106,7 @@ classdef HP8720 < VNA.AbstractVNA
             % GETSTOPFREQ Get the stop frequency for measurements
             try
                 stop = obj.queryFreqParam("STOP");
+                pause(1); % give it a moment to think
             catch e
                 disp(e);
                 obj.log.Error(e.message);
