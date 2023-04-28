@@ -1,21 +1,15 @@
-classdef HP8720 < VNA.AbstractVNA
-    %HP8720 Class for controlling the HP8720 VNA.
+classdef Keysight_P937xA < VNA.AbstractVNA
+    %Keysight_P937xA Class for controlling the USB VNA.
 
     properties (SetAccess = protected, GetAccess = protected)
         % log,  in superclass
-        dataXferMethod
         measurementParams
     end
 
     methods
-        function obj = HP8720(logger)
-            %HP8720 Construct an instance of this class
+        function obj = Keysight_P937xA(visabus, logger)
+            obj.bus = visabus;
             obj.log = logger;
-
-            % FORM5 is binary and is much faster for large data transfers.
-            % FORM4 is ASCII and much slower for large data transfers,
-            %       but has lower overhead for small data transfers.
-            obj.dataXferMethod = "FORM5";
         end
 
         function init(obj)
@@ -30,7 +24,7 @@ classdef HP8720 < VNA.AbstractVNA
             catch e
                 msg = sprintf("Failed to initialize VNA after %d seconds", maxInitWait);
                 obj.log.Error(msg);
-                error("HP8720::init(): %s", msg);
+                error("Keysight_P937xA::init(): %s", msg);
             end
 
             % We only record S21.
@@ -79,6 +73,145 @@ classdef HP8720 < VNA.AbstractVNA
             obj.send("CONT");
         end
 
+       function start = getStartFreq(obj)
+            % GETSTARTFREQ Get the start frequency for measurements
+            try
+                start = obj.queryFreqParam("SENSe:FREQuency:STARt");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setStartFreq(obj, freq)
+            % SETSTARTFREQ Set the start frequency for measurements
+            try
+                obj.setFreqParam("SENSe:FREQuency:STARt", freq);
+                pause(1); % give it a moment to think
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function stop = getStopFreq(obj)
+            % GETSTOPFREQ Get the stop frequency for measurements
+            try
+                stop = obj.queryFreqParam("SENSe:FREQuency:STOP");
+                pause(1); % give it a moment to think
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setStopFreq(obj, freq)
+            % SETSTOPFREQ Set the stop frequency for measurements
+            try
+                obj.setFreqParam("SENSe:FREQuency:STOP", freq);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function center = getCenterFreq(obj)
+            % GETCENTERFREQ Get the center frequency for measurements
+            try
+                center = obj.queryFreqParam("SENSe:FREQuency:CENTer");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setCenterFreq(obj, freq)
+            % SETCENTERFREQ Set the center frequency for measurements
+            try
+                obj.setFreqParam("SENSe:FREQuency:CENTer", freq);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function span = getSpan(obj)
+            % GETSPAN Get the span for measurements
+            try
+                span = obj.queryFreqParam("SENSe:FREQuency:SPAN");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setSpan(obj, span)
+            % SETSPAN Set the span for measurements
+            try
+                obj.setFreqParam("SENSe:FREQuency:SPAN", span);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function numPts = getNumPts(obj)
+            % GETNUMPTS Get the number of data points to be collected in
+            % measurements
+            try
+                numPts = obj.queryFreqParam("SENSe:SWEep:POINts");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setNumPts(obj, numPts)
+            % SETNUMPTS Set the number of data points to be collected in measurements
+            try
+                obj.setNumParam("SENSe:SWEep:POINts", numPts);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function ifbw = getIFBW(obj)
+            try
+                ifbw = obj.queryFreqParam("SENSe:BANDwidth");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+        
+        function setIFBW(obj, ifbw)
+            try
+                obj.setNumParam("SENSe:BANDwidth", ifbw);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function time = getSweepTime(obj)
+            try
+                time = obj.queryFreqParam("SENSe:SWEep:TIME");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setSweepTime(obj, time)
+            try
+                obj.setNumParam("SENSe:SWEep:TIME", time);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
         function results = measure(obj)
             % MEASURE Return measurement results
 
@@ -119,7 +252,7 @@ classdef HP8720 < VNA.AbstractVNA
                     else
                         obj.log.Error("Max attempts reached.");
                         obj.setTimeout(timeout); % Restore timeout
-                        error("HP8720::measure(): Max measurement attempts reached");
+                        error("Keysight_P937xA::measure(): Max measurement attempts reached");
                     end
                 end
             end
@@ -162,7 +295,7 @@ classdef HP8720 < VNA.AbstractVNA
             catch e
                 msg = sprintf("Failed to complete measurement after %d seconds", maxWait);
                 obj.log.Error(msg);
-                error("HP8720::getMeasurementData(): %s", msg);
+                error("Keysight_P937xA::getMeasurementData(): %s", msg);
             end
 
             % Output the data
@@ -181,7 +314,7 @@ classdef HP8720 < VNA.AbstractVNA
 
             % Sanity check
             if length(S21) ~= numPoints
-                error("HP8720::getMeasurementData(): Received wrong number of data points: %d (expected %d)", length(S21), numPoints);
+                error("Keysight_P937xA::getMeasurementData(): Received wrong number of data points: %d (expected %d)", length(S21), numPoints);
             end
         end
 
@@ -202,15 +335,13 @@ classdef HP8720 < VNA.AbstractVNA
             if (str2double(opc) ~= 1)
                 msg = sprintf("VNA operation failed to complete after %d seconds", maxWait);
                 obj.log.Error(msg);
-                error("HP8720::waitOpc(): %s", msg);
+                error("Keysight_P937xA::waitOpc(): %s", msg);
             end
         end
 
-        % Overridden in Prologix class
         function send(obj, msg)
         end
 
-        % Overridden in Prologix class
         function msg = recv(obj, len)
         end
 
