@@ -9,7 +9,7 @@ classdef VISA < GPIBBus.AbstractGPIBBus
     end
 
     methods
-        function obj = PrologixUsb(addr, logger)
+        function obj = VISA(addr, logger)
             assert(isstring(addr) || (ischar(addr) && length(addr) > 1), "addr must be a string.");
 
             obj.log = logger;
@@ -18,6 +18,7 @@ classdef VISA < GPIBBus.AbstractGPIBBus
             obj.setConnectedState(false);
 
             obj.connect();
+            obj.setTimeout(0.5); % 1/2 second is plenty fast for most operations
         end
 
         function setTimeout(obj, t)
@@ -60,18 +61,50 @@ classdef VISA < GPIBBus.AbstractGPIBBus
         end
 
         function msg = recv(obj, len)
-            msg = char(read(obj.visa, len))';
+            %msg = char(read(obj.visa, len))';
+            msg = char(read(obj.visa, len));
 
-%             % messages seem to have trailing newlines
-%             msg = strtrim(msg);
+            % messages seem to have trailing newlines
+            msg = strtrim(msg);
 
             obj.log.Debug(sprintf("recv(): %s", msg));
         end
 
-%         function data = fread(obj)
-%             data = char(fread(obj.sp, 100000))';
-%             obj.log.Debug(sprintf("fread(): %s", data));
-%         end
+        function data = fread()
+            % unused here
+        end
+
+        function data = fread_binary(obj)
+            % read binary data
+            obj.log.Debug("Entered fread() function");
+
+            % First is an ascii hash sign followed by a single digit
+            % representing the number of bytes telling the total size
+            % of the data transmitted
+            prefix = char(read(obj.visa, 2)); % like #4
+            if prefix(1) ~= '#'
+                error("Unexpected prefix");
+            end
+            hdrsize = str2num(prefix(2)); % number of bytes remaining in header
+            datasize = str2num(char(read(obj.visa, hdrsize)));
+
+            % Expected number of bytes:
+            %   Number of points
+            %       x
+            %   2 (real and imaginary for each point)
+            %       x
+            %   8 (8 bytes in a 64-bit/double number)
+            expected_data_size = 201 * 2 * 8;
+            if datasize ~= expected_data_size
+                error("Data does not match expected data size");
+            end
+            data = read(obj.visa, datasize/8, "double");
+
+            real = data(1:2:end);
+            imag = data(2:2:end);
+            data = real + j*imag;
+            obj.log.Debug(sprintf("fread(): %s", data));
+        end
 
 %         function data = fread_FORM5(obj, numDataPoints)
 %             % FREAD_FORM5 Read FORM5 data from the HP VNA.
@@ -85,23 +118,9 @@ classdef VISA < GPIBBus.AbstractGPIBBus
 %             obj.log.Debug(sprintf("fread(): %s", data));
 %         end
 
-%         function sdc(obj, recipientAddr)
-%             obj.log.Debug(sprintf("SDC"));
-%             obj.setGPIBAddress(uint8(recipientAddr));
-%             fprintf(obj.sp, "++clr");
-%         end
+        function sdc(obj, recipientAddr)
+            % Required for class to not be abstract, but not needed for
+            % VISA. Should refactor superclass so this isn't necessary.
+        end
     end % methods
-
-    methods (Access = protected)
-%         function setGPIBAddress(obj, addr)
-%             obj.log.Debug(sprintf("TRYING TO SET ADDRESS %d (currently %d)", addr, obj.addr));
-%            if addr ~= obj.addr
-%                 obj.addr = addr;
-%                 if obj.connected
-%                     fprintf(obj.sp, sprintf("++addr %d", addr));
-%                 end
-%                 obj.log.Info(sprintf("Changed target GPIB address to %d", addr));
-%             end
-%         end
-    end % protected methods
 end

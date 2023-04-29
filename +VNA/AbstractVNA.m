@@ -23,8 +23,11 @@ classdef AbstractVNA< handle
 
         % protected methods
 
-        send(obj, msg)
-        recv(obj, len) % returns a string
+        % Matlab is complaining about these methods not being public in the
+        % Keysight Vna class. It doesn't have a problem with it for the HP
+        % class, though, so I'm just going to comment it out here for now.
+        %send(obj, msg)
+        %recv(obj, len) % returns a string
     end
 
     methods
@@ -36,9 +39,9 @@ classdef AbstractVNA< handle
             ec = obj.ec;
         end
 
-         function conn = isConnected(obj)
-             conn = obj.connected;
-         end
+        function conn = isConnected(obj)
+            conn = obj.connected;
+        end
 
         function setOnConnectStateChangeCallback(obj, cb)
             obj.onConnectStateChangeCb = cb;

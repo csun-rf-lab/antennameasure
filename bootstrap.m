@@ -30,6 +30,8 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
     % Set up VNA
     vnalog = Logger();
 vnalog.echoToCli(true); % For debugging
-    vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
-    %vna = VNA.Dummy(vnalog);
+    %vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
+    visa_address = "TCPIP0::localhost::hislip_PXI10_CHASSIS1_SLOT1_INDEX0::INSTR";
+    visabus = GPIBBus.VISA(visa_address, vnalog);
+    vna = VNA.Keysight_P937xA(visabus, vnalog);
 end
