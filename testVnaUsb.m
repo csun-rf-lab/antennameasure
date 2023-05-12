@@ -8,6 +8,9 @@ log.echoToCli(true); % For debugging
 visa_address = "TCPIP0::localhost::hislip_PXI10_CHASSIS1_SLOT1_INDEX0::INSTR";
 visabus = GPIBBus.VISA(visa_address, log);
 
+% Suppress visadev warnings about incomplete reads
+warning('off', 'transportlib:client:ReadWarning');
+
 
 vna = VNA.Keysight_P937xA(visabus, log);
 

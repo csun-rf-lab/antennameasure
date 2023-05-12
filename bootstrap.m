@@ -8,12 +8,16 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
     % Add UI components to path so application can use them
     addpath("./ui-components");
 
-    warning('off','MATLAB:serial:fread:unsuccessfulRead');
+    warning('off', 'MATLAB:serial:fread:unsuccessfulRead');
+
+    % Suppress visadev warnings about incomplete reads
+    warning('off', 'transportlib:client:ReadWarning');
     
 % TODO: Accept config from the application (comport, etc.)
 
     MI4190_gpib_addr = 4;
-    HP8720_gpib_addr = 16;
+    HP8720_gpib_addr = 16; % HP 8720B
+    visa_address = "TCPIP0::localhost::hislip_PXI10_CHASSIS1_SLOT1_INDEX0::INSTR"; % Keysight P9374A
     axes = [1 2 4];
     comport = "COM3";
 
@@ -30,8 +34,11 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
     % Set up VNA
     vnalog = Logger();
 vnalog.echoToCli(true); % For debugging
-    %vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
-    visa_address = "TCPIP0::localhost::hislip_PXI10_CHASSIS1_SLOT1_INDEX0::INSTR";
+
+    % Uncomment to use HP 8720B VNA
+%     vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
+
+    % Uncomment to use P9374A USB VNA
     visabus = GPIBBus.VISA(visa_address, vnalog);
     vna = VNA.Keysight_P937xA(visabus, vnalog);
 end
