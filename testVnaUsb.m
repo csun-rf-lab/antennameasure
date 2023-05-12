@@ -23,20 +23,22 @@ vna.setStopFreq(2.0e9);
 vna.setNumPts(201);
 % vna.setCenterFreq(2.5e9);
 % vna.setSpan(1e9);
+vna.setPower(-10);
 
 start = vna.getStartFreq()
 stop = vna.getStopFreq()
 numPts = vna.getNumPts()
 center = vna.getCenterFreq()
 span = vna.getSpan()
+pwr = vna.getPower();
 
 
 %% Now make a measurement
 vna.beforeMeasurements();
-results = vna.measure();
-results = vna.measure();
-results = vna.measure();
-results = vna.measure();
+% results = vna.measure();
+% results = vna.measure();
+% results = vna.measure();
+% results = vna.measure();
 results = vna.measure();
 vna.afterMeasurements();
 
@@ -75,9 +77,7 @@ S = results.S21;
 
 %subplot(2,2,3)
 %plot(freq/1e9,20*log10(abs(S(:,3))),'-b','linewidth',2);
-plot(freq/1e9,20*log10(abs(S(:,1))),'-b','linewidth',2);
-hold on
-plot([freq(1) freq(end)]/1e9,[0 0],'-r','linewidth',2);
+plot(freq/1e9,20*log10(abs(S)),'-b','linewidth',2);
 xlabel('Frequency (GHz)');
 ylabel('|S_{21}| (dB)');
 ylim([-SCAL*REFP+REFV SCAL*(10-REFP)+REFV])

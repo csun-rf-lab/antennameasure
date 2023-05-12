@@ -37,6 +37,10 @@ classdef Keysight_P937xA < VNA.AbstractVNA
             % We only record S21.
             obj.send("CALC1:MEAS1:PAR 'S21'");
 
+            % Set a reasonable default power level.
+            % (The P9374A seems to pick -5 dBm by default.)
+            obj.setPower(-10);
+
             % Set scale to 20 dB/div
             obj.send("DISPlay:WINDow1:TRACe1:Y:SCALe:PDIVision 20");
 
@@ -178,6 +182,21 @@ classdef Keysight_P937xA < VNA.AbstractVNA
             % SETNUMPTS Set the number of data points to be collected in measurements
             try
                 obj.setNumParam("SENSe:SWEep:POINts", numPts);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function pwr_dbm = getPower(obj)
+            obj.send(sprintf('SOURCE:POW? "Port 1"'));
+            pwr_dbm = obj.recv(40);
+            pwr_dbm = str2num(pwr_dbm);
+        end
+
+        function setPower(obj, pwr_dbm)
+            try
+                obj.send(sprintf('SOURCE:POW %d, "Port 1"', pwr_dbm));
             catch e
                 disp(e);
                 obj.log.Error(e.message);
