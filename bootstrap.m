@@ -4,14 +4,6 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 % configured. The application can potentially pass some configuration data
 % (such as comport), but there needs to be somewhere that the appropriate
 % drivers are set up. This is that place.
-
-    % Add UI components to path so application can use them
-    addpath("./ui-components");
-
-    warning('off', 'MATLAB:serial:fread:unsuccessfulRead');
-
-    % Suppress visadev warnings about incomplete reads
-    warning('off', 'transportlib:client:ReadWarning');
     
 % TODO: Accept config from the application (comport, etc.)
 
@@ -20,6 +12,19 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
     visa_address = "TCPIP0::localhost::hislip_PXI10_CHASSIS1_SLOT1_INDEX0::INSTR"; % Keysight P9374A
     axes = [1 2 4];
     comport = "COM3";
+
+    %vna_selection = "HP8720B"; % Uncomment to use HP 8720B VNA
+    vna_selection = "P9374A";  % Uncomment to use P9374A USB VNA
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % Add UI components to path so application can use them
+    addpath("./ui-components");
+
+    warning('off', 'MATLAB:serial:fread:unsuccessfulRead');
+
+    % Suppress visadev warnings about incomplete reads
+    warning('off', 'transportlib:client:ReadWarning');
 
     buslog = Logger();
 
@@ -33,12 +38,13 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 
     % Set up VNA
     vnalog = Logger();
-vnalog.echoToCli(true); % For debugging
+    vnalog.echoToCli(true); % For debugging
 
-    % Uncomment to use HP 8720B VNA
-%     vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
-
-    % Uncomment to use P9374A USB VNA
-    visabus = GPIBBus.VISA(visa_address, vnalog);
-    vna = VNA.Keysight_P937xA(visabus, vnalog);
+    switch vna_selection
+    case "HP8720B"
+        vna = VNA.HP8720_Prologix(b, HP8720_gpib_addr, vnalog);
+    case "P9374A"
+        visabus = GPIBBus.VISA(visa_address, vnalog);
+        vna = VNA.Keysight_P937xA(visabus, vnalog);
+    end
 end
