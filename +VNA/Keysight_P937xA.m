@@ -353,7 +353,6 @@ classdef Keysight_P937xA < VNA.AbstractVNA
             obj.bus.setTimeout(1);
             for iteration=0:maxWait
                 opc = obj.recv(1);
-                fprintf("Received '%s'", opc);
                 if (str2double(opc) == 1)
                     obj.recv(1); % clear a non-printable character from the buffer
                     break;
