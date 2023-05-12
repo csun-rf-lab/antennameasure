@@ -20,7 +20,7 @@ vna.init();
 
 vna.setStartFreq(1.0e9);
 vna.setStopFreq(2.0e9);
-vna.setNumPts(201);
+vna.setNumPts(401);
 % vna.setCenterFreq(2.5e9);
 % vna.setSpan(1e9);
 vna.setPower(-10);

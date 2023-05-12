@@ -340,7 +340,7 @@ classdef Keysight_P937xA < VNA.AbstractVNA
             obj.log.Info("Transferring S21 data...");
             obj.send("CALC:MEAS1:DATA:SDATA?"); % read s-param data in complex format
 
-            S21 = obj.bus.fread_binary();
+            S21 = obj.bus.fread_binary(numPoints);
 
             % Sanity check
             if length(S21) ~= numPoints

@@ -74,7 +74,7 @@ classdef VISA < GPIBBus.AbstractGPIBBus
             % unused here
         end
 
-        function data = fread_binary(obj)
+        function data = fread_binary(obj, num_pts)
             % read binary data
             obj.log.Debug("Entered fread() function");
 
@@ -94,7 +94,7 @@ classdef VISA < GPIBBus.AbstractGPIBBus
             %   2 (real and imaginary for each point)
             %       x
             %   8 (8 bytes in a 64-bit/double number)
-            expected_data_size = 201 * 2 * 8;
+            expected_data_size = num_pts * 2 * 8;
             if datasize ~= expected_data_size
                 error("Data does not match expected data size");
             end
@@ -103,7 +103,7 @@ classdef VISA < GPIBBus.AbstractGPIBBus
             real = data(1:2:end);
             imag = data(2:2:end);
             data = real + j*imag;
-            obj.log.Debug(sprintf("fread(): %s", data));
+            %obj.log.Debug(sprintf("fread(): %s", data));
         end
 
 %         function data = fread_FORM5(obj, numDataPoints)
