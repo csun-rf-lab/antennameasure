@@ -13,8 +13,8 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
     axes = [1 2 4];
     comport = "COM3";
 
-    %vna_selection = "HP8720B"; % Uncomment to use HP 8720B VNA
-    vna_selection = "P9374A";  % Uncomment to use P9374A USB VNA
+    vna_selection = "HP8720B"; % Uncomment to use HP 8720B VNA
+    %vna_selection = "P9374A";  % Uncomment to use P9374A USB VNA
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

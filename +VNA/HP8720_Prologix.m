@@ -36,9 +36,7 @@ classdef HP8720_Prologix < VNA.HP8720
         function addr = getGPIBAddress(obj)
             addr = obj.addr;
         end
-    end
 
-    methods (Access = protected)
         function send(obj, msg)
             obj.log.Debug(sprintf("send(): %s", msg));
             obj.gpib.send(obj.addr, msg);
@@ -48,7 +46,9 @@ classdef HP8720_Prologix < VNA.HP8720
             msg = obj.gpib.recv(len);
             obj.log.Debug(sprintf("recv(): %s", msg));
         end
+    end
 
+    methods (Access = protected)
         function data = fread(obj)
             % TODO: deal with buffer size, particularly for the VNA.
             data = obj.gpib.fread();

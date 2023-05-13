@@ -20,14 +20,6 @@ classdef AbstractVNA< handle
 
         measure(obj)
         % Return measurement results
-
-        % protected methods
-
-        % Matlab is complaining about these methods not being public in the
-        % Keysight Vna class. It doesn't have a problem with it for the HP
-        % class, though, so I'm just going to comment it out here for now.
-        %send(obj, msg)
-        %recv(obj, len) % returns a string
     end
 
     methods

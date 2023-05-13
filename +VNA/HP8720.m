@@ -143,6 +143,14 @@ classdef HP8720 < VNA.AbstractVNA
 
             obj.setTimeout(timeout);
         end % measure()
+
+        % Overridden in Prologix class
+        function send(obj, msg)
+        end
+
+        % Overridden in Prologix class
+        function msg = recv(obj, len)
+        end
     end % methods
 
     methods (Access = protected)
@@ -204,14 +212,6 @@ classdef HP8720 < VNA.AbstractVNA
                 obj.log.Error(msg);
                 error("HP8720::waitOpc(): %s", msg);
             end
-        end
-
-        % Overridden in Prologix class
-        function send(obj, msg)
-        end
-
-        % Overridden in Prologix class
-        function msg = recv(obj, len)
         end
 
         % Overridden in Prologix class
