@@ -15,6 +15,7 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
 
     vna_selection = "HP8720B"; % Uncomment to use HP 8720B VNA
     %vna_selection = "P9374A";  % Uncomment to use P9374A USB VNA
+    %vna_selection = "dummy";   % Uncomment to use dummy VNA
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -46,5 +47,7 @@ function [b, m, vna, buslog, motlog, vnalog] = bootstrap()
     case "P9374A"
         visabus = GPIBBus.VISA(visa_address, vnalog);
         vna = VNA.Keysight_P937xA(visabus, vnalog);
+    case "dummy"
+        vna = VNA.Dummy(vnalog);
     end
 end
