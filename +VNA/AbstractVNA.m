@@ -18,36 +18,6 @@ classdef AbstractVNA< handle
         afterMeasurements(obj)
         % Wrap things up after taking a set of measurements
 
-        getStartFreq(obj)
-        % Get the start frequency for measurements
-
-        setStartFreq(obj, freq)
-        % Set the start frequency for measurements
-
-        getStopFreq(obj)
-        % Get the stop frequency for measurements
-
-        setStopFreq(obj, freq)
-        % Set the stop frequency for measurements
-
-        getCenterFreq(obj)
-        % Return the center frequency for measurements
-
-        setCenterFreq(obj, freq)
-        % Set the center frequency for measurements
-
-        getSpan(obj)
-        % Return the span for measurements
-
-        setSpan(obj, span)
-        % Set the span for measurements
-
-        getNumPts(obj)
-        % Return the number of data points to be collected in measurements
-
-        setNumPts(obj, numPts)
-        % Set the number of data points to be collected in measurements
-
         measure(obj)
         % Return measurement results
     end
@@ -61,9 +31,9 @@ classdef AbstractVNA< handle
             ec = obj.ec;
         end
 
-         function conn = isConnected(obj)
-             conn = obj.connected;
-         end
+        function conn = isConnected(obj)
+            conn = obj.connected;
+        end
 
         function setOnConnectStateChangeCallback(obj, cb)
             obj.onConnectStateChangeCb = cb;
@@ -71,6 +41,145 @@ classdef AbstractVNA< handle
 
         function clearOnConnectStateChangeCallback(obj)
             clear obj.onConnectStateChangeCb;
+        end
+
+        function start = getStartFreq(obj)
+            % GETSTARTFREQ Get the start frequency for measurements
+            try
+                start = obj.queryFreqParam("STAR");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setStartFreq(obj, freq)
+            % SETSTARTFREQ Set the start frequency for measurements
+            try
+                obj.setFreqParam("STAR", freq);
+                pause(1); % give it a moment to think
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function stop = getStopFreq(obj)
+            % GETSTOPFREQ Get the stop frequency for measurements
+            try
+                stop = obj.queryFreqParam("STOP");
+                pause(1); % give it a moment to think
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setStopFreq(obj, freq)
+            % SETSTOPFREQ Set the stop frequency for measurements
+            try
+                obj.setFreqParam("STOP", freq);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function center = getCenterFreq(obj)
+            % GETCENTERFREQ Get the center frequency for measurements
+            try
+                center = obj.queryFreqParam("CENT");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setCenterFreq(obj, freq)
+            % SETCENTERFREQ Set the center frequency for measurements
+            try
+                obj.setFreqParam("CENT", freq);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function span = getSpan(obj)
+            % GETSPAN Get the span for measurements
+            try
+                span = obj.queryFreqParam("SPAN");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setSpan(obj, span)
+            % SETSPAN Set the span for measurements
+            try
+                obj.setFreqParam("SPAN", span);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function numPts = getNumPts(obj)
+            % GETNUMPTS Get the number of data points to be collected in
+            % measurements
+            try
+                numPts = obj.queryFreqParam("POIN");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setNumPts(obj, numPts)
+            % SETNUMPTS Set the number of data points to be collected in measurements
+            try
+                obj.setNumParam("POIN", numPts);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function ifbw = getIFBW(obj)
+            try
+                ifbw = obj.queryFreqParam("IFBW");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+        
+        function setIFBW(obj, ifbw)
+            try
+                obj.setNumParam("IFBW", ifbw);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function time = getSweepTime(obj)
+            try
+                time = obj.queryFreqParam("SWET");
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
+        end
+
+        function setSweepTime(obj, time)
+            try
+                obj.setNumParam("SWET", time);
+            catch e
+                disp(e);
+                obj.log.Error(e.message);
+            end
         end
     end
 
@@ -90,6 +199,22 @@ classdef AbstractVNA< handle
             if isa(obj.onConnectStateChangeCb, 'function_handle')
                 obj.onConnectStateChangeCb(obj.connected);
             end
+        end
+
+        function hz = queryFreqParam(obj, param)
+            obj.send(sprintf("%s?", param));
+            hz = obj.recv(40);
+            hz = str2num(hz);
+        end
+
+        % value is in hz
+        function setFreqParam(obj, param, value)
+            obj.send(sprintf("%s%dHZ;", param, value));
+        end
+
+        % value is just numerical
+        function setNumParam(obj, param, value)
+            obj.send(sprintf("%s%d;", param, value));
         end
     end
 end
