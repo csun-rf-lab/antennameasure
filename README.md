@@ -44,6 +44,7 @@ https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/c
 
 When installing the application:
 
+* To use the Keysight P9374A USB VNA, you must install the Matlab Instrument Control Toolbox as well as the VISA support package for Keysight: https://www.mathworks.com/hardware-support/ni-visa-keysight-visa-tekvisa.html
 * In theory, you must separately install the Cisco openh264 driver in the same folder: https://github.com/cisco/openh264/releases/v1.8.0
 (per instructions here: https://ww2.mathworks.cn/help/supportpkg/ipcamera/ug/ip-camera-acquistion-overview.html)
 * HOWEVER, that doesn't seem to be working yet. The camera works fine when run from within MATLAB rather than as a standlone application.
@@ -51,6 +52,7 @@ When installing the application:
 
 # Useful links
 
+* SCPI command list for PXI VNAs: https://rfmw.em.keysight.com/wireless/helpfiles/pxivna/help.htm
 * Prologix devices: http://prologix.biz/
 * Camera: https://www.trendnet.com/store/products/surveillance-camera/indoor-outdoor-8mp-4k-uhd-h265-wdr-poe-ir-bullet-network-camera-TV-IP318PI#specifications
 
